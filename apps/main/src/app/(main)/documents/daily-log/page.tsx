@@ -129,6 +129,7 @@ export default function DailyLogPage() {
                     記録フレーズ
                   </th>
                   <th className="px-2 py-2 text-left font-medium">メモ</th>
+                  <th className="px-2 py-2 text-left font-medium">支援記録まとめ</th>
                   <th className="px-2 py-2 text-left font-medium">送迎</th>
                   <th className="px-2 py-2 text-left font-medium">記録者</th>
                 </tr>
@@ -162,6 +163,7 @@ export default function DailyLogPage() {
                         {r.phrases.length > 0 ? r.phrases.join("、") : "—"}
                       </td>
                       <td className="px-2 py-2">{r.memo || "—"}</td>
+                      <td className="px-2 py-2">{r.ai_text || "—"}</td>
                       <td className="px-2 py-2 whitespace-nowrap">
                         {r.pickup_method || "—"}
                       </td>

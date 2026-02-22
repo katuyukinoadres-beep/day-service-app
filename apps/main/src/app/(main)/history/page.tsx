@@ -166,6 +166,12 @@ export default function HistoryPage() {
                     {record.memo}
                   </p>
                 )}
+                {record.ai_text && (
+                  <p>
+                    <span className="text-sub">支援記録まとめ: </span>
+                    {record.ai_text}
+                  </p>
+                )}
                 {record.pickup_method && (
                   <p>
                     <span className="text-sub">送迎: </span>

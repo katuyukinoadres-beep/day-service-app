@@ -303,6 +303,12 @@ export default function ServiceRecordPage() {
                   </tr>
                   <tr className="border-b border-border">
                     <th className="bg-gray-50 px-3 py-2 text-left font-medium">
+                      支援記録まとめ
+                    </th>
+                    <td className="px-3 py-2 whitespace-pre-wrap">{record.ai_text || "—"}</td>
+                  </tr>
+                  <tr className="border-b border-border">
+                    <th className="bg-gray-50 px-3 py-2 text-left font-medium">
                       送迎方法
                     </th>
                     <td className="px-3 py-2">
