@@ -16,6 +16,11 @@
   --color-sidebar-active: #374151;
 }
 
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 body {
   color: var(--color-foreground);
   background: var(--color-background);

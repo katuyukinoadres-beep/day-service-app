@@ -141,9 +141,11 @@ export default function RecordPage() {
       if (res.ok) {
         const { text } = await res.json();
         setMemo(text);
+      } else {
+        alert("AI文章生成に失敗しました。しばらく待ってから再度お試しください。");
       }
     } catch {
-      // silently fail
+      alert("AI文章生成に失敗しました。ネットワークを確認してください。");
     }
     setGenerating(false);
   };

@@ -28,7 +28,7 @@ export default function DashboardLayout({
         <span className="text-sm font-bold text-foreground">ぱっと記録 Admin</span>
       </div>
 
-      <main className="flex-1 p-4 pt-18 md:ml-64 md:p-8 md:pt-8">{children}</main>
+      <main className="flex-1 overflow-x-hidden p-4 pt-18 md:ml-64 md:p-8 md:pt-8">{children}</main>
     </div>
   );
 }
