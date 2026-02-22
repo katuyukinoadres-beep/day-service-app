@@ -43,7 +43,18 @@
       "Bash(test:*)",
       "Bash(echo:*)",
       "Bash(python -c:*)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(git push:*)",
+      "Bash(/tmp/create_vercel_project.js:*)",
+      "Bash(node:*)",
+      "Bash(/tmp/get_project.js:*)",
+      "Bash(/tmp/create_project2.js:*)",
+      "Bash(/tmp/setup_vercel.js:*)",
+      "Bash(/tmp/deploy.js:*)",
+      "Bash(/tmp/fix_deploy.js:*)",
+      "Bash(/tmp/cleanup.js:*)",
+      "Bash(/tmp/verify.js:*)",
+      "Bash(/tmp/verify2.js:*)"
     ]
   }
 }
