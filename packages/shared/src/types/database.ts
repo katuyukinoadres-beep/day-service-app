@@ -173,6 +173,7 @@ export type Database = {
           activities: string[];
           phrases: string[];
           memo: string | null;
+          ai_text: string | null;
           arrival_time: string | null;
           departure_time: string | null;
           pickup_method: string | null;
@@ -189,6 +190,7 @@ export type Database = {
           activities?: string[];
           phrases?: string[];
           memo?: string | null;
+          ai_text?: string | null;
           arrival_time?: string | null;
           departure_time?: string | null;
           pickup_method?: string | null;
@@ -205,6 +207,7 @@ export type Database = {
           activities?: string[];
           phrases?: string[];
           memo?: string | null;
+          ai_text?: string | null;
           arrival_time?: string | null;
           departure_time?: string | null;
           pickup_method?: string | null;

@@ -49,6 +49,7 @@ export default function RecordPage() {
   const [activities, setActivities] = useState<string[]>([]);
   const [selectedPhrases, setSelectedPhrases] = useState<string[]>([]);
   const [memo, setMemo] = useState("");
+  const [aiText, setAiText] = useState("");
   const [arrivalTime, setArrivalTime] = useState("");
   const [departureTime, setDepartureTime] = useState("");
   const [pickupMethod, setPickupMethod] = useState("");
@@ -96,6 +97,7 @@ export default function RecordPage() {
         setActivities(existingData.activities);
         setSelectedPhrases(existingData.phrases);
         setMemo(existingData.memo ?? "");
+        setAiText(existingData.ai_text ?? "");
         setArrivalTime(existingData.arrival_time ?? "");
         setDepartureTime(existingData.departure_time ?? "");
         setPickupMethod(existingData.pickup_method ?? "");
@@ -140,7 +142,7 @@ export default function RecordPage() {
       });
       if (res.ok) {
         const { text } = await res.json();
-        setMemo(text);
+        setAiText(text);
       } else {
         const data = await res.json().catch(() => null);
         const msg = data?.error ?? "不明なエラー";
@@ -204,6 +206,7 @@ export default function RecordPage() {
       activities,
       phrases: selectedPhrases,
       memo: memo.trim() || null,
+      ai_text: aiText.trim() || null,
       arrival_time: arrivalTime || null,
       departure_time: departureTime || null,
       pickup_method: pickupMethod || null,
@@ -392,10 +395,10 @@ export default function RecordPage() {
           ))}
         </div>
 
-        {/* AI文章生成 + メモ */}
+        {/* AI文章生成 */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="text-[14px] font-medium text-foreground">メモ</label>
+            <label className="text-[14px] font-medium text-foreground">AI支援記録</label>
             <button
               type="button"
               onClick={handleAIGenerate}
@@ -420,6 +423,16 @@ export default function RecordPage() {
               )}
             </button>
           </div>
+          <Textarea
+            value={aiText}
+            onChange={(e) => setAiText(e.target.value)}
+            placeholder="ボタンを押すとAIが支援記録を生成します"
+          />
+        </div>
+
+        {/* メモ（自由記入欄） */}
+        <div>
+          <label className="text-[14px] font-medium text-foreground mb-1 block">メモ（自由記入）</label>
           <Textarea
             value={memo}
             onChange={(e) => setMemo(e.target.value)}
