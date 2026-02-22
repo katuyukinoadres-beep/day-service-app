@@ -134,6 +134,9 @@ export default function RecordPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           childName: child.name,
+          birthDate: child.birth_date,
+          school: child.school,
+          grade: child.grade,
           mood,
           activities,
           phrases: selectedPhrases,
