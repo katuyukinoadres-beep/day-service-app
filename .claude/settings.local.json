@@ -21,7 +21,29 @@
       "Bash(git config:*)",
       "Bash(gh repo create:*)",
       "Bash(NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder npx next build:*)",
-      "Bash(NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder npm run build:*)"
+      "Bash(NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder npm run build:*)",
+      "Bash(xargs sed:*)",
+      "Bash(NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder npm run build:main:*)",
+      "Bash(NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder npm run build:admin:*)",
+      "Bash(dir:*)",
+      "Bash(Get-ChildItem)",
+      "Bash(cmd /c \"echo hello\")",
+      "Bash(cmd /c \"dir .vercel 2>nul & echo --- & dir apps\\\\main\\\\vercel.json 2>nul & dir apps\\\\admin\\\\vercel.json 2>nul & echo done\")",
+      "Bash(cmd /c \"git status --short\")",
+      "Bash(cmd /c \"git status\")",
+      "Bash(cmd /c \"git status > C:\\\\Users\\\\katuy\\\\day-service-app\\\\tmp_status.txt 2>&1\")",
+      "Bash(cmd /c \"git status > tmp_status.txt 2>&1 && type tmp_status.txt\")",
+      "Bash(cmd /c \"type nul\")",
+      "Bash(bash -c \"echo hello world\")",
+      "Bash(bash --norc --noprofile -c \"echo hello\")",
+      "Bash(bash --norc -c \"pwd && git -C C:/Users/katuy/day-service-app status\")",
+      "Bash(cmd /c \"git log --oneline -5 2>&1\")",
+      "Bash(cmd /c \"git log --oneline -5 > _tmp_out.txt 2>&1\")",
+      "Bash(cmd /c \"git log --oneline -5 > C:\\\\Users\\\\katuy\\\\day-service-app\\\\_tmp_out.txt 2>&1\")",
+      "Bash(test:*)",
+      "Bash(echo:*)",
+      "Bash(python -c:*)",
+      "Bash(node -e:*)"
     ]
   }
 }

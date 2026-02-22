@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1B6B4A"/>
+      <stop offset="100%" style="stop-color:#145236"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="192" height="192" rx="40" fill="url(#bg)"/>
+  <!-- Clipboard body -->
+  <rect x="48" y="44" width="96" height="116" rx="10" fill="white" opacity="0.95"/>
+  <!-- Clipboard clip -->
+  <rect x="72" y="32" width="48" height="20" rx="6" fill="white"/>
+  <rect x="80" y="36" width="32" height="12" rx="4" fill="#1B6B4A"/>
+  <!-- Checkmark lines (records) -->
+  <circle cx="72" cy="80" r="8" fill="#1B6B4A" opacity="0.2"/>
+  <path d="M67 80 L71 84 L78 75" stroke="#1B6B4A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <rect x="88" y="74" width="44" height="6" rx="3" fill="#1B6B4A" opacity="0.3"/>
+  <rect x="88" y="84" width="28" height="4" rx="2" fill="#1B6B4A" opacity="0.15"/>
+  <!-- Second row -->
+  <circle cx="72" cy="112" r="8" fill="#1B6B4A" opacity="0.2"/>
+  <path d="M67 112 L71 116 L78 107" stroke="#1B6B4A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <rect x="88" y="106" width="44" height="6" rx="3" fill="#1B6B4A" opacity="0.3"/>
+  <rect x="88" y="116" width="32" height="4" rx="2" fill="#1B6B4A" opacity="0.15"/>
+  <!-- Pencil icon -->
+  <g transform="translate(110, 120)">
+    <rect x="8" y="0" width="28" height="28" rx="14" fill="#E8913A"/>
+    <path d="M18 8 L26 16 L20 22 L12 14 Z" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M12 14 L10 24 L20 22" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
