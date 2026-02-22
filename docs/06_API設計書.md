@@ -298,6 +298,63 @@ PATCH /rest/v1/phrase_bank?id=eq.{phrase_id}
 
 ---
 
+### 3.7 AI文章生成 (generate-record)
+
+#### 支援記録まとめ生成
+```
+POST /api/generate-record
+Content-Type: application/json
+```
+```json
+{
+  "childName": "田中太郎",
+  "birthDate": "2018-04-15",
+  "school": "○○小学校",
+  "grade": "3年",
+  "mood": "good",
+  "activities": ["工作", "運動"],
+  "phrases": ["集中して取り組めました"],
+  "memo": "今日は特に集中できていました"
+}
+```
+**レスポンス**:
+```json
+{
+  "text": "本日は工作活動でペットボトルロケットの制作に取り組みました。..."
+}
+```
+
+**エラーレスポンス**:
+```json
+{
+  "error": "API key not configured"
+}
+```
+
+**備考**:
+- サーバーサイドでClaude Sonnet 4.5 API（`claude-sonnet-4-5-20250929`）を呼び出し
+- max_tokens: 500
+- 児童の年齢を生年月日から自動計算し、年齢・学年に応じた表現で生成
+- 環境変数 `ANTHROPIC_API_KEY` が必要
+
+---
+
+### 3.8 Admin管理API (admin-data)
+
+#### 管理データ取得
+```
+GET /api/admin-data?type={type}
+```
+| パラメータ | 型 | 説明 |
+|---|---|---|
+| type | string | `stats`, `facilities`, `facility`, `users`, `user`, `records` |
+
+**備考**:
+- `SUPABASE_SERVICE_ROLE_KEY` を使用してRLSをバイパス
+- Cookieベースのパスワード認証が必要（`/api/login` で認証）
+
+---
+
 ## 4. SDK使用パターン
 
 ### 4.1 クライアントサイド使用例
