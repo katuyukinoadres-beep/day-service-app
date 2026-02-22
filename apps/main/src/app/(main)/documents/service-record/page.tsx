@@ -70,7 +70,6 @@ export default function ServiceRecordPage() {
   // Fetch record when date + child changes
   useEffect(() => {
     if (!selectedChildId) {
-      setRecord(null);
       return;
     }
     const fetchRecord = async () => {
@@ -100,6 +99,10 @@ export default function ServiceRecordPage() {
     };
     fetchRecord();
   }, [date, selectedChildId]);
+
+  // Reset record when child is deselected
+  const currentRecord = selectedChildId ? record : null;
+  const currentRecorder = selectedChildId ? recorder : null;
 
   const selectedChild = children.find((c) => c.id === selectedChildId) ?? null;
 
@@ -134,7 +137,7 @@ export default function ServiceRecordPage() {
               ))}
             </select>
           </div>
-          {selectedChildId && record && (
+          {selectedChildId && currentRecord && (
             <Button
               variant="primary"
               onClick={() => window.print()}
@@ -160,7 +163,7 @@ export default function ServiceRecordPage() {
           <p className="py-8 text-center text-sub text-[14px]">
             読み込み中...
           </p>
-        ) : !record ? (
+        ) : !currentRecord ? (
           <p className="py-12 text-center text-sub text-[15px]">
             この日の記録はありません
           </p>
@@ -252,7 +255,7 @@ export default function ServiceRecordPage() {
                       来所時刻
                     </th>
                     <td className="px-3 py-2">
-                      {record.arrival_time ?? "—"}
+                      {currentRecord.arrival_time ?? "—"}
                     </td>
                   </tr>
                   <tr className="border-b border-border">
@@ -260,22 +263,22 @@ export default function ServiceRecordPage() {
                       退所時刻
                     </th>
                     <td className="px-3 py-2">
-                      {record.departure_time ?? "—"}
+                      {currentRecord.departure_time ?? "—"}
                     </td>
                   </tr>
                   <tr className="border-b border-border">
                     <th className="bg-gray-50 px-3 py-2 text-left font-medium">
                       気分
                     </th>
-                    <td className="px-3 py-2">{moodText(record.mood)}</td>
+                    <td className="px-3 py-2">{moodText(currentRecord.mood)}</td>
                   </tr>
                   <tr className="border-b border-border">
                     <th className="bg-gray-50 px-3 py-2 text-left font-medium">
                       活動内容
                     </th>
                     <td className="px-3 py-2">
-                      {record.activities.length > 0
-                        ? record.activities.join("・")
+                      {currentRecord.activities.length > 0
+                        ? currentRecord.activities.join("・")
                         : "—"}
                     </td>
                   </tr>
@@ -284,9 +287,9 @@ export default function ServiceRecordPage() {
                       記録フレーズ
                     </th>
                     <td className="px-3 py-2">
-                      {record.phrases.length > 0 ? (
+                      {currentRecord.phrases.length > 0 ? (
                         <ul className="list-disc ml-4">
-                          {record.phrases.map((p, i) => (
+                          {currentRecord.phrases.map((p, i) => (
                             <li key={i}>{p}</li>
                           ))}
                         </ul>
@@ -299,20 +302,20 @@ export default function ServiceRecordPage() {
                     <th className="bg-gray-50 px-3 py-2 text-left font-medium">
                       メモ
                     </th>
-                    <td className="px-3 py-2">{record.memo || "—"}</td>
+                    <td className="px-3 py-2">{currentRecord.memo || "—"}</td>
                   </tr>
                   <tr className="border-b border-border">
                     <th className="bg-gray-50 px-3 py-2 text-left font-medium">
                       支援記録まとめ
                     </th>
-                    <td className="px-3 py-2 whitespace-pre-wrap">{record.ai_text || "—"}</td>
+                    <td className="px-3 py-2 whitespace-pre-wrap">{currentRecord.ai_text || "—"}</td>
                   </tr>
                   <tr className="border-b border-border">
                     <th className="bg-gray-50 px-3 py-2 text-left font-medium">
                       送迎方法
                     </th>
                     <td className="px-3 py-2">
-                      {record.pickup_method || "—"}
+                      {currentRecord.pickup_method || "—"}
                     </td>
                   </tr>
                   <tr className="border-b border-border">
@@ -320,7 +323,7 @@ export default function ServiceRecordPage() {
                       記録者
                     </th>
                     <td className="px-3 py-2">
-                      {recorder?.display_name ?? "—"}
+                      {currentRecorder?.display_name ?? "—"}
                     </td>
                   </tr>
                 </tbody>

@@ -73,7 +73,10 @@ export default function MonthlySummaryPage() {
   }, [selectedMonth]);
 
   const daysInMonth = getDaysInMonth(selectedMonth);
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const days = useMemo(
+    () => Array.from({ length: daysInMonth }, (_, i) => i + 1),
+    [daysInMonth]
+  );
 
   // Compute attendance counts
   const { childTotals, dayTotals, grandTotal } = useMemo(() => {
@@ -94,7 +97,7 @@ export default function MonthlySummaryPage() {
       }
     }
     return { childTotals: ct, dayTotals: dt, grandTotal: gt };
-  }, [children, daysInMonth, selectedMonth, attendanceSet]);
+  }, [children, days, selectedMonth, attendanceSet]);
 
   return (
     <div>

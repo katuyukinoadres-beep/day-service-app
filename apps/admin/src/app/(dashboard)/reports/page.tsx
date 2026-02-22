@@ -38,7 +38,7 @@ export default function ReportsPage() {
       });
 
       const facilityIdsArr = Array.from(facilityIds);
-      let nameMap = new Map<string, string>();
+      const nameMap = new Map<string, string>();
       if (facilityIdsArr.length > 0) {
         const namesRes = await fetch(`/api/admin-data?type=facilities-names&ids=${facilityIdsArr.join(",")}`);
         const names: { id: string; name: string }[] = namesRes.ok ? await namesRes.json() : [];

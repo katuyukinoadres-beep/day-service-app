@@ -18,7 +18,6 @@ export default function HistoryPage() {
   const [date, setDate] = useState(getToday());
   const [childFilter, setChildFilter] = useState("");
   const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
 
   const fetchRecords = async () => {
     setLoading(true);

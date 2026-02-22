@@ -12,14 +12,15 @@ export default function ProfilePage() {
   const router = useRouter();
   const { profile, loading: profileLoading } = useProfile();
   const [displayName, setDisplayName] = useState("");
+  const [hasInitialized, setHasInitialized] = useState(false);
   const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (profile) {
-      setDisplayName(profile.display_name);
-    }
-  }, [profile]);
+  // Sync display name from profile once loaded
+  if (profile && !hasInitialized) {
+    setDisplayName(profile.display_name);
+    setHasInitialized(true);
+  }
 
   useEffect(() => {
     const fetchEmail = async () => {
