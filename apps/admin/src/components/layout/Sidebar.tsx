@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -42,7 +43,7 @@ const navItems = [
   },
 ];
 
-export function Sidebar() {
+export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -57,8 +58,12 @@ export function Sidebar() {
     router.refresh();
   };
 
-  return (
-    <aside className="fixed left-0 top-0 flex h-full w-64 flex-col bg-sidebar text-white">
+  const handleNavClick = () => {
+    onClose?.();
+  };
+
+  const sidebarContent = (
+    <aside className="flex h-full w-64 flex-col bg-sidebar text-white">
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 px-5 border-b border-white/10">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
@@ -74,6 +79,7 @@ export function Sidebar() {
             <li key={item.href}>
               <Link
                 href={item.href}
+                onClick={handleNavClick}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                   isActive(item.href)
                     ? "bg-sidebar-active text-white"
@@ -101,5 +107,24 @@ export function Sidebar() {
         </button>
       </div>
     </aside>
+  );
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <div className="hidden md:block fixed left-0 top-0 h-full z-30">
+        {sidebarContent}
+      </div>
+
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div className="md:hidden fixed inset-0 z-40">
+          <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+          <div className="relative z-50 h-full">
+            {sidebarContent}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

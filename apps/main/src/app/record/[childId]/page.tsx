@@ -43,6 +43,7 @@ export default function RecordPage() {
   const [allRecords, setAllRecords] = useState<DailyRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   const [mood, setMood] = useState<"good" | "neutral" | "bad" | null>(null);
   const [activities, setActivities] = useState<string[]>([]);
@@ -120,6 +121,31 @@ export default function RecordPage() {
         ? prev.filter((p) => p !== phrase)
         : [...prev, phrase]
     );
+  };
+
+  const handleAIGenerate = async () => {
+    if (!child) return;
+    setGenerating(true);
+    try {
+      const res = await fetch("/api/generate-record", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          childName: child.name,
+          mood,
+          activities,
+          phrases: selectedPhrases,
+          memo,
+        }),
+      });
+      if (res.ok) {
+        const { text } = await res.json();
+        setMemo(text);
+      }
+    } catch {
+      // silently fail
+    }
+    setGenerating(false);
   };
 
   // 児童の目標に関連するフレーズを優先表示
@@ -362,13 +388,40 @@ export default function RecordPage() {
           ))}
         </div>
 
-        {/* メモ */}
-        <Textarea
-          label="メモ"
-          value={memo}
-          onChange={(e) => setMemo(e.target.value)}
-          placeholder="自由記述（任意）"
-        />
+        {/* AI文章生成 + メモ */}
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-[14px] font-medium text-foreground">メモ</label>
+            <button
+              type="button"
+              onClick={handleAIGenerate}
+              disabled={generating}
+              className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-accent/90 disabled:opacity-50"
+            >
+              {generating ? (
+                <>
+                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  生成中...
+                </>
+              ) : (
+                <>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456Z" />
+                  </svg>
+                  AIで文章作成
+                </>
+              )}
+            </button>
+          </div>
+          <Textarea
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
+            placeholder="自由記述（任意）"
+          />
+        </div>
 
         {/* 送迎方法 */}
         <div>
