@@ -54,7 +54,10 @@
       "Bash(/tmp/fix_deploy.js:*)",
       "Bash(/tmp/cleanup.js:*)",
       "Bash(/tmp/verify.js:*)",
-      "Bash(/tmp/verify2.js:*)"
+      "Bash(/tmp/verify2.js:*)",
+      "Bash(gh repo view:*)",
+      "Bash(git branch:*)",
+      "Bash(gh pr:*)"
     ]
   }
 }

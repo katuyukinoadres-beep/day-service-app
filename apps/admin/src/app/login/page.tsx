@@ -1,36 +1,27 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@patto/shared/supabase/client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-function LoginForm() {
+export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (searchParams.get("error") === "unauthorized") {
-      setError("管理者権限がありません。スーパー管理者のみアクセスできます。");
-    }
-  }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
     });
 
-    if (authError) {
-      setError("メールアドレスまたはパスワードが正しくありません");
+    if (!res.ok) {
+      setError("パスワードが正しくありません");
       setLoading(false);
       return;
     }
@@ -67,22 +58,6 @@ function LoginForm() {
         <div className="rounded-xl bg-white p-8 shadow-sm border border-border">
           <form onSubmit={handleLogin} className="flex flex-col gap-5">
             <div>
-              <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-foreground">
-                メールアドレス
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@example.com"
-                required
-                autoComplete="email"
-                className="w-full rounded-lg border border-border bg-white px-4 py-2.5 text-sm text-foreground placeholder:text-sub/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-
-            <div>
               <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-foreground">
                 パスワード
               </label>
@@ -115,13 +90,5 @@ function LoginForm() {
         </div>
       </div>
     </div>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense>
-      <LoginForm />
-    </Suspense>
   );
 }
