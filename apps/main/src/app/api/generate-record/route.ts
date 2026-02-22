@@ -26,15 +26,23 @@ export async function POST(request: NextRequest) {
 - 具体的な活動内容に触れる
 - 文章のみを出力し、見出しや箇条書きは使わない`;
 
-  const client = new Anthropic({ apiKey });
+  try {
+    const client = new Anthropic({ apiKey });
 
-  const message = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 300,
-    messages: [{ role: "user", content: prompt }],
-  });
+    const message = await client.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 300,
+      messages: [{ role: "user", content: prompt }],
+    });
 
-  const text = message.content[0].type === "text" ? message.content[0].text : "";
+    const text = message.content[0].type === "text" ? message.content[0].text : "";
 
-  return NextResponse.json({ text });
+    return NextResponse.json({ text });
+  } catch (error) {
+    console.error("Anthropic API error:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "AI generation failed" },
+      { status: 500 }
+    );
+  }
 }

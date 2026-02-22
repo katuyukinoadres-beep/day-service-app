@@ -13,7 +13,6 @@ export default function FacilityDetailPage() {
   const facilityId = params.facilityId as string;
   const [facility, setFacility] = useState<Facility | null>(null);
   const [staffCount, setStaffCount] = useState(0);
-  const [childrenCount, setChildrenCount] = useState(0);
   const [recordsCount, setRecordsCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -24,16 +23,11 @@ export default function FacilityDetailPage() {
       const [
         { data: facilityData },
         { count: sc },
-        { count: cc },
         { count: rc },
       ] = await Promise.all([
         supabase.from("facilities").select("*").eq("id", facilityId).single(),
         supabase
           .from("profiles")
-          .select("*", { count: "exact", head: true })
-          .eq("facility_id", facilityId),
-        supabase
-          .from("children")
           .select("*", { count: "exact", head: true })
           .eq("facility_id", facilityId),
         supabase
@@ -44,7 +38,6 @@ export default function FacilityDetailPage() {
 
       if (facilityData) setFacility(facilityData);
       setStaffCount(sc ?? 0);
-      setChildrenCount(cc ?? 0);
       setRecordsCount(rc ?? 0);
       setLoading(false);
     };
@@ -70,7 +63,6 @@ export default function FacilityDetailPage() {
 
   const tabs = [
     { label: "概要", href: `/facilities/${facilityId}` },
-    { label: "児童", href: `/facilities/${facilityId}/children` },
     { label: "記録", href: `/facilities/${facilityId}/records` },
     { label: "スタッフ", href: `/facilities/${facilityId}/staff` },
   ];
@@ -123,7 +115,7 @@ export default function FacilityDetailPage() {
       </div>
 
       {/* Stats */}
-      <div className="mb-8 grid grid-cols-3 gap-4">
+      <div className="mb-8 grid grid-cols-2 gap-4">
         <StatsCard
           title="スタッフ数"
           value={staffCount}
@@ -131,16 +123,6 @@ export default function FacilityDetailPage() {
           icon={
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
-            </svg>
-          }
-        />
-        <StatsCard
-          title="児童数"
-          value={childrenCount}
-          color="#8B5CF6"
-          icon={
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.182 15.182a4.5 4.5 0 0 1-6.364 0M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Z" />
             </svg>
           }
         />

@@ -222,7 +222,6 @@ export type Database = {
         Returns: {
           total_facilities: number;
           total_users: number;
-          total_children: number;
           total_records: number;
           records_today: number;
           facilities_with_activity_today: number;

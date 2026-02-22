@@ -6,14 +6,10 @@ import Link from "next/link";
 import { createClient } from "@patto/shared/supabase/client";
 import type { DailyRecord } from "@patto/shared/types";
 
-type RecordWithChild = DailyRecord & {
-  children: { name: string } | null;
-};
-
 export default function FacilityRecordsPage() {
   const params = useParams();
   const facilityId = params.facilityId as string;
-  const [records, setRecords] = useState<RecordWithChild[]>([]);
+  const [records, setRecords] = useState<DailyRecord[]>([]);
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [loading, setLoading] = useState(true);
 
@@ -23,12 +19,12 @@ export default function FacilityRecordsPage() {
       const supabase = createClient();
       const { data } = await supabase
         .from("daily_records")
-        .select("*, children(name)")
+        .select("*")
         .eq("facility_id", facilityId)
         .eq("date", date)
         .order("created_at", { ascending: false });
 
-      if (data) setRecords(data as RecordWithChild[]);
+      if (data) setRecords(data);
       setLoading(false);
     };
 
@@ -50,7 +46,6 @@ export default function FacilityRecordsPage() {
 
   const tabs = [
     { label: "概要", href: `/facilities/${facilityId}` },
-    { label: "児童", href: `/facilities/${facilityId}/children` },
     { label: "記録", href: `/facilities/${facilityId}/records` },
     { label: "スタッフ", href: `/facilities/${facilityId}/staff` },
   ];
@@ -113,9 +108,6 @@ export default function FacilityRecordsPage() {
             <thead>
               <tr className="border-b border-border bg-gray-50">
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-sub">
-                  児童名
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-sub">
                   日付
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-sub">
@@ -138,22 +130,19 @@ export default function FacilityRecordsPage() {
             <tbody className="divide-y divide-border">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-sm text-sub">
+                  <td colSpan={6} className="px-6 py-8 text-center text-sm text-sub">
                     読み込み中...
                   </td>
                 </tr>
               ) : records.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-sm text-sub">
+                  <td colSpan={6} className="px-6 py-8 text-center text-sm text-sub">
                     この日付の記録はありません
                   </td>
                 </tr>
               ) : (
                 records.map((record) => (
                   <tr key={record.id} className="hover:bg-gray-50">
-                    <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-foreground">
-                      {record.children?.name ?? "—"}
-                    </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-sub">
                       {record.date}
                     </td>

@@ -142,7 +142,9 @@ export default function RecordPage() {
         const { text } = await res.json();
         setMemo(text);
       } else {
-        alert("AI文章生成に失敗しました。しばらく待ってから再度お試しください。");
+        const data = await res.json().catch(() => null);
+        const msg = data?.error ?? "不明なエラー";
+        alert(`AI文章生成に失敗しました: ${msg}`);
       }
     } catch {
       alert("AI文章生成に失敗しました。ネットワークを確認してください。");

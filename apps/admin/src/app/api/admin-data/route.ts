@@ -16,12 +16,10 @@ export async function GET(request: NextRequest) {
       const [
         { count: totalFacilities },
         { count: totalUsers },
-        { count: totalChildren },
         { count: totalRecords },
       ] = await Promise.all([
         supabase.from("facilities").select("*", { count: "exact", head: true }),
         supabase.from("profiles").select("*", { count: "exact", head: true }),
-        supabase.from("children").select("*", { count: "exact", head: true }),
         supabase.from("daily_records").select("*", { count: "exact", head: true }),
       ]);
 
@@ -40,7 +38,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         total_facilities: totalFacilities ?? 0,
         total_users: totalUsers ?? 0,
-        total_children: totalChildren ?? 0,
         total_records: totalRecords ?? 0,
         records_today: recordsToday ?? 0,
         facilities_with_activity_today: facilitiesWithActivityToday,
@@ -50,7 +47,7 @@ export async function GET(request: NextRequest) {
     case "recent-records": {
       const { data } = await supabase
         .from("daily_records")
-        .select("*, children(name)")
+        .select("*")
         .order("created_at", { ascending: false })
         .limit(10);
       return NextResponse.json(data ?? []);
@@ -66,11 +63,11 @@ export async function GET(request: NextRequest) {
 
       const withCounts = await Promise.all(
         facilities.map(async (facility) => {
-          const [{ count: staffCount }, { count: childrenCount }] = await Promise.all([
-            supabase.from("profiles").select("*", { count: "exact", head: true }).eq("facility_id", facility.id),
-            supabase.from("children").select("*", { count: "exact", head: true }).eq("facility_id", facility.id),
-          ]);
-          return { ...facility, staffCount: staffCount ?? 0, childrenCount: childrenCount ?? 0 };
+          const { count: staffCount } = await supabase
+            .from("profiles")
+            .select("*", { count: "exact", head: true })
+            .eq("facility_id", facility.id);
+          return { ...facility, staffCount: staffCount ?? 0 };
         })
       );
       return NextResponse.json(withCounts);
@@ -105,22 +102,14 @@ export async function GET(request: NextRequest) {
       const id = searchParams.get("id");
       if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-      const [{ data: facility }, { count: staffCount }, { count: childrenCount }, { count: recordsCount }] =
+      const [{ data: facility }, { count: staffCount }, { count: recordsCount }] =
         await Promise.all([
           supabase.from("facilities").select("*").eq("id", id).single(),
           supabase.from("profiles").select("*", { count: "exact", head: true }).eq("facility_id", id),
-          supabase.from("children").select("*", { count: "exact", head: true }).eq("facility_id", id),
           supabase.from("daily_records").select("*", { count: "exact", head: true }).eq("facility_id", id),
         ]);
 
-      return NextResponse.json({ facility, staffCount: staffCount ?? 0, childrenCount: childrenCount ?? 0, recordsCount: recordsCount ?? 0 });
-    }
-
-    case "facility-children": {
-      const facilityId = searchParams.get("facilityId");
-      if (!facilityId) return NextResponse.json([]);
-      const { data } = await supabase.from("children").select("*").eq("facility_id", facilityId).order("name_kana");
-      return NextResponse.json(data ?? []);
+      return NextResponse.json({ facility, staffCount: staffCount ?? 0, recordsCount: recordsCount ?? 0 });
     }
 
     case "facility-records": {
@@ -128,7 +117,7 @@ export async function GET(request: NextRequest) {
       if (!facilityId) return NextResponse.json([]);
       const { data } = await supabase
         .from("daily_records")
-        .select("*, children(name)")
+        .select("*")
         .eq("facility_id", facilityId)
         .order("date", { ascending: false })
         .limit(50);

@@ -7,7 +7,6 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 
 type FacilityWithCounts = Facility & {
   staffCount: number;
-  childrenCount: number;
 };
 
 export default function FacilitiesPage() {
@@ -75,7 +74,6 @@ export default function FacilitiesPage() {
               </div>
               <div className="flex gap-4 text-xs text-sub">
                 <span>スタッフ: {facility.staffCount}</span>
-                <span>児童: {facility.childrenCount}</span>
                 <span>{new Date(facility.created_at).toLocaleDateString("ja-JP")}</span>
               </div>
             </Link>
@@ -91,20 +89,18 @@ export default function FacilitiesPage() {
               <tr className="border-b border-border bg-gray-50">
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-sub">施設名</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-sub">スタッフ数</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-sub">児童数</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-sub">ステータス</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-sub">作成日</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {filtered.length === 0 ? (
-                <tr><td colSpan={5} className="px-6 py-8 text-center text-sm text-sub">施設が見つかりません</td></tr>
+                <tr><td colSpan={4} className="px-6 py-8 text-center text-sm text-sub">施設が見つかりません</td></tr>
               ) : (
                 filtered.map((facility) => (
                   <tr key={facility.id} className="hover:bg-gray-50">
                     <td className="whitespace-nowrap px-6 py-4"><Link href={`/facilities/${facility.id}`} className="text-sm font-medium text-primary hover:underline">{facility.name}</Link></td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-sub">{facility.staffCount}</td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-sub">{facility.childrenCount}</td>
                     <td className="whitespace-nowrap px-6 py-4"><StatusBadge status={facility.is_active ? "active" : "inactive"} /></td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-sub">{new Date(facility.created_at).toLocaleDateString("ja-JP")}</td>
                   </tr>
