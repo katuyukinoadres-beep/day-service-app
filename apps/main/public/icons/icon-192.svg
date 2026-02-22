@@ -1,31 +1,33 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#1B6B4A"/>
-      <stop offset="100%" style="stop-color:#145236"/>
+      <stop offset="0%" style="stop-color:#2D9D6A"/>
+      <stop offset="100%" style="stop-color:#1B6B4A"/>
     </linearGradient>
   </defs>
   <!-- Background -->
   <rect width="192" height="192" rx="40" fill="url(#bg)"/>
-  <!-- Clipboard body -->
-  <rect x="48" y="44" width="96" height="116" rx="10" fill="white" opacity="0.95"/>
-  <!-- Clipboard clip -->
-  <rect x="72" y="32" width="48" height="20" rx="6" fill="white"/>
-  <rect x="80" y="36" width="32" height="12" rx="4" fill="#1B6B4A"/>
-  <!-- Checkmark lines (records) -->
-  <circle cx="72" cy="80" r="8" fill="#1B6B4A" opacity="0.2"/>
-  <path d="M67 80 L71 84 L78 75" stroke="#1B6B4A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <rect x="88" y="74" width="44" height="6" rx="3" fill="#1B6B4A" opacity="0.3"/>
-  <rect x="88" y="84" width="28" height="4" rx="2" fill="#1B6B4A" opacity="0.15"/>
-  <!-- Second row -->
-  <circle cx="72" cy="112" r="8" fill="#1B6B4A" opacity="0.2"/>
-  <path d="M67 112 L71 116 L78 107" stroke="#1B6B4A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <rect x="88" y="106" width="44" height="6" rx="3" fill="#1B6B4A" opacity="0.3"/>
-  <rect x="88" y="116" width="32" height="4" rx="2" fill="#1B6B4A" opacity="0.15"/>
-  <!-- Pencil icon -->
-  <g transform="translate(110, 120)">
-    <rect x="8" y="0" width="28" height="28" rx="14" fill="#E8913A"/>
-    <path d="M18 8 L26 16 L20 22 L12 14 Z" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M12 14 L10 24 L20 22" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Notebook -->
+  <rect x="44" y="36" width="104" height="128" rx="10" fill="white" opacity="0.95"/>
+  <!-- Notebook spine -->
+  <rect x="44" y="36" width="12" height="128" rx="4" fill="#F0E6D3"/>
+  <!-- Lines on notebook -->
+  <line x1="68" y1="64" x2="136" y2="64" stroke="#1B6B4A" stroke-width="1.5" opacity="0.2"/>
+  <line x1="68" y1="80" x2="136" y2="80" stroke="#1B6B4A" stroke-width="1.5" opacity="0.2"/>
+  <line x1="68" y1="96" x2="136" y2="96" stroke="#1B6B4A" stroke-width="1.5" opacity="0.2"/>
+  <line x1="68" y1="112" x2="136" y2="112" stroke="#1B6B4A" stroke-width="1.5" opacity="0.2"/>
+  <line x1="68" y1="128" x2="136" y2="128" stroke="#1B6B4A" stroke-width="1.5" opacity="0.2"/>
+  <!-- Pen writing -->
+  <path d="M70 62 Q80 58 90 66 Q100 74 110 68 Q120 62 130 70" stroke="#1B6B4A" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.6"/>
+  <path d="M70 78 Q85 86 100 78 Q110 72 120 80" stroke="#1B6B4A" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.4"/>
+  <!-- Smiley face (child-friendly) -->
+  <circle cx="100" cy="112" r="16" fill="#FFF3D6" stroke="#E8913A" stroke-width="2"/>
+  <circle cx="94" cy="109" r="2" fill="#1B6B4A"/>
+  <circle cx="106" cy="109" r="2" fill="#1B6B4A"/>
+  <path d="M93 117 Q100 123 107 117" stroke="#1B6B4A" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Sparkle (AI/magic) -->
+  <g transform="translate(130, 36)">
+    <circle cx="16" cy="16" r="16" fill="#E8913A"/>
+    <path d="M16 6 L18 13 L25 13 L19 18 L21 25 L16 21 L11 25 L13 18 L7 13 L14 13 Z" fill="white" opacity="0.95"/>
   </g>
 </svg>

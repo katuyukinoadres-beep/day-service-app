@@ -13,6 +13,10 @@ export const metadata: Metadata = {
   title: "ぱっと記録",
   description: "放課後等デイサービス向け支援記録アプリ",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icons/icon-192.svg",
+    apple: "/icons/icon-192.svg",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
