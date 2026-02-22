@@ -11,19 +11,6 @@ function getToday(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function moodText(mood: string | null): string {
-  switch (mood) {
-    case "good":
-      return "良好";
-    case "neutral":
-      return "普通";
-    case "bad":
-      return "不調";
-    default:
-      return "—";
-  }
-}
-
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
   const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
@@ -117,18 +104,13 @@ export default function DailyLogPage() {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[800px] border-collapse text-[13px]">
+            <table className="w-full min-w-[600px] border-collapse text-[13px]">
               <thead>
                 <tr className="border-b-2 border-border bg-gray-50">
                   <th className="px-2 py-2 text-left font-medium">児童名</th>
                   <th className="px-2 py-2 text-left font-medium">来所</th>
                   <th className="px-2 py-2 text-left font-medium">退所</th>
-                  <th className="px-2 py-2 text-left font-medium">気分</th>
                   <th className="px-2 py-2 text-left font-medium">活動内容</th>
-                  <th className="px-2 py-2 text-left font-medium">
-                    記録フレーズ
-                  </th>
-                  <th className="px-2 py-2 text-left font-medium">メモ</th>
                   <th className="px-2 py-2 text-left font-medium">支援記録まとめ</th>
                   <th className="px-2 py-2 text-left font-medium">送迎</th>
                   <th className="px-2 py-2 text-left font-medium">記録者</th>
@@ -151,18 +133,11 @@ export default function DailyLogPage() {
                       <td className="px-2 py-2 whitespace-nowrap">
                         {r.departure_time ?? "—"}
                       </td>
-                      <td className="px-2 py-2 whitespace-nowrap">
-                        {moodText(r.mood)}
-                      </td>
                       <td className="px-2 py-2">
                         {r.activities.length > 0
                           ? r.activities.join("・")
                           : "—"}
                       </td>
-                      <td className="px-2 py-2">
-                        {r.phrases.length > 0 ? r.phrases.join("、") : "—"}
-                      </td>
-                      <td className="px-2 py-2">{r.memo || "—"}</td>
                       <td className="px-2 py-2">{r.ai_text || "—"}</td>
                       <td className="px-2 py-2 whitespace-nowrap">
                         {r.pickup_method || "—"}
