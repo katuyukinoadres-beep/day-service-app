@@ -395,6 +395,16 @@ export default function RecordPage() {
           ))}
         </div>
 
+        {/* メモ（自由記入欄） */}
+        <div>
+          <label className="text-[14px] font-medium text-foreground mb-1 block">メモ（自由記入）</label>
+          <Textarea
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
+            placeholder="自由記述（任意）"
+          />
+        </div>
+
         {/* AI文章生成 */}
         <div>
           <div className="flex items-center justify-between mb-1">
@@ -427,16 +437,6 @@ export default function RecordPage() {
             value={aiText}
             onChange={(e) => setAiText(e.target.value)}
             placeholder="ボタンを押すとAIが支援記録を生成します"
-          />
-        </div>
-
-        {/* メモ（自由記入欄） */}
-        <div>
-          <label className="text-[14px] font-medium text-foreground mb-1 block">メモ（自由記入）</label>
-          <Textarea
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
-            placeholder="自由記述（任意）"
           />
         </div>
 
