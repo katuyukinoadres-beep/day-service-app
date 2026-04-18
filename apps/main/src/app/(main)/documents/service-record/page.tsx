@@ -300,9 +300,19 @@ export default function ServiceRecordPage() {
                   </tr>
                   <tr className="border-b border-border">
                     <th className="bg-gray-50 px-3 py-2 text-left font-medium">
-                      メモ
+                      活動中のトピックス
                     </th>
-                    <td className="px-3 py-2">{currentRecord.memo || "—"}</td>
+                    <td className="px-3 py-2 whitespace-pre-wrap">
+                      {currentRecord.topics || "—"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-border">
+                    <th className="bg-gray-50 px-3 py-2 text-left font-medium">
+                      特記事項
+                    </th>
+                    <td className="px-3 py-2 whitespace-pre-wrap">
+                      {currentRecord.notes || currentRecord.memo || "—"}
+                    </td>
                   </tr>
                   <tr className="border-b border-border">
                     <th className="bg-gray-50 px-3 py-2 text-left font-medium">

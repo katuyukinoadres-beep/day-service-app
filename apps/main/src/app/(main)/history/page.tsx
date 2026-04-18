@@ -159,9 +159,21 @@ export default function HistoryPage() {
                     </ul>
                   </div>
                 )}
-                {record.memo && (
+                {record.topics && (
                   <p>
-                    <span className="text-sub">メモ: </span>
+                    <span className="text-sub">活動中のトピックス: </span>
+                    {record.topics}
+                  </p>
+                )}
+                {record.notes && (
+                  <p>
+                    <span className="text-sub">特記事項: </span>
+                    {record.notes}
+                  </p>
+                )}
+                {!record.topics && !record.notes && record.memo && (
+                  <p>
+                    <span className="text-sub">メモ（旧形式）: </span>
                     {record.memo}
                   </p>
                 )}
