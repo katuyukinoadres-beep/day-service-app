@@ -8,6 +8,7 @@ import { Chip } from "@/components/ui/Chip";
 import { Textarea } from "@/components/ui/Input";
 import { VoiceInputButton } from "@/components/VoiceInputButton";
 import { CopyButton } from "@/components/CopyButton";
+import { useProfile } from "@/lib/useProfile";
 import type {
   Child,
   Phrase,
@@ -40,6 +41,7 @@ function buildRitalicoDailyReport(params: {
   childName: string;
   arrivalTime: string;
   departureTime: string;
+  recorderName: string;
   moodLabel: string;
   selectedActivityNames: string[];
   notes: string;
@@ -51,6 +53,7 @@ function buildRitalicoDailyReport(params: {
     childName,
     arrivalTime,
     departureTime,
+    recorderName,
     moodLabel,
     selectedActivityNames,
     notes,
@@ -73,6 +76,7 @@ function buildRitalicoDailyReport(params: {
           ? `〜 ${departureTime}`
           : "";
   if (timeRange) lines.push(`【サービス提供時間】 ${timeRange}`);
+  if (recorderName) lines.push(`【担当者】 ${recorderName}`);
   lines.push(`【気分】 ${moodLabel}`);
 
   if (selectedActivityNames.length > 0) {
@@ -107,6 +111,7 @@ export default function RecordPage() {
   const router = useRouter();
   const params = useParams();
   const childId = params.childId as string;
+  const { profile } = useProfile();
 
   const [child, setChild] = useState<Child | null>(null);
   const [phrases, setPhrases] = useState<Phrase[]>([]);
@@ -756,6 +761,7 @@ export default function RecordPage() {
                 childName: child.name,
                 arrivalTime,
                 departureTime,
+                recorderName: profile?.display_name ?? "",
                 moodLabel:
                   MOODS.find((m) => m.value === mood)?.label ?? "未選択",
                 selectedActivityNames,
