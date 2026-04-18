@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@patto/shared/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const deactivated = searchParams.get("reason") === "deactivated";
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -116,6 +118,12 @@ export default function LoginPage() {
             放課後等デイサービス支援記録
           </p>
         </div>
+
+        {deactivated && (
+          <div className="mb-5 rounded-xl border border-amber-300 bg-amber-50 p-3 text-[13px] text-amber-900">
+            このアカウントは無効化されました。所属施設の管理者にお問い合わせください。
+          </div>
+        )}
 
         {mode === "login" ? (
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
@@ -236,5 +244,19 @@ export default function LoginPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-dvh items-center justify-center">
+          <p className="text-sub text-[14px]">読み込み中...</p>
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

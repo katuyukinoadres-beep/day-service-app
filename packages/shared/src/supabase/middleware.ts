@@ -45,11 +45,32 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // 認証済みだが profiles.is_active = false のユーザーは強制ログアウト
+  // （スタッフ退職処理時の即時遮断 UX — Phase B8a フォローアップ）
+  if (user && !request.nextUrl.pathname.startsWith("/login")) {
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("is_active")
+      .eq("id", user.id)
+      .maybeSingle();
+    const profile = profileRow as { is_active: boolean } | null;
+    if (profile && profile.is_active === false) {
+      await supabase.auth.signOut();
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("reason", "deactivated");
+      return NextResponse.redirect(url);
+    }
+  }
+
   // 認証済みユーザーがログインページにアクセスした場合はホームへ
   if (user && request.nextUrl.pathname.startsWith("/login")) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
+    // 退職処理直後のリダイレクトは素通しする
+    if (request.nextUrl.searchParams.get("reason") !== "deactivated") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;
