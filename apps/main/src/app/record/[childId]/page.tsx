@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { Textarea } from "@/components/ui/Input";
 import { VoiceInputButton } from "@/components/VoiceInputButton";
-import type { Child, Phrase, DailyRecord, QuickTemplate } from "@patto/shared/types";
-
-const ACTIVITIES = [
-  "工作", "運動", "学習", "自由遊び", "SST",
-  "おやつ", "外出", "音楽", "調理",
-];
+import type {
+  Child,
+  Phrase,
+  DailyRecord,
+  QuickTemplate,
+  ActivityItem,
+  DailyRecordActivity,
+} from "@patto/shared/types";
 
 const MOODS = [
   { value: "good" as const, emoji: "😊", label: "良好" },
@@ -49,7 +51,11 @@ export default function RecordPage() {
   const [generating, setGenerating] = useState(false);
 
   const [mood, setMood] = useState<"good" | "neutral" | "bad" | null>(null);
-  const [activities, setActivities] = useState<string[]>([]);
+  const [activityItems, setActivityItems] = useState<ActivityItem[]>([]);
+  // key: activity_item_id, value: detail text (空文字＝選択だが詳細なし or 詳細欄なし)
+  const [itemSelections, setItemSelections] = useState<Record<string, string>>(
+    {}
+  );
   const [selectedPhrases, setSelectedPhrases] = useState<string[]>([]);
   const [topics, setTopics] = useState("");
   const [notes, setNotes] = useState("");
@@ -64,35 +70,47 @@ export default function RecordPage() {
     const fetchData = async () => {
       const supabase = createClient();
 
-      const [childRes, phrasesRes, recordRes, childrenRes, recordsRes, templatesRes] =
-        await Promise.all([
-          supabase.from("children").select("*").eq("id", childId).single(),
-          supabase
-            .from("phrase_bank")
-            .select("*")
-            .order("sort_order", { ascending: true }),
-          supabase
-            .from("daily_records")
-            .select("*")
-            .eq("child_id", childId)
-            .eq("date", today)
-            .maybeSingle(),
-          supabase
-            .from("children")
-            .select("*")
-            .eq("is_active", true)
-            .order("name_kana", { ascending: true }),
-          supabase
-            .from("daily_records")
-            .select("*")
-            .eq("date", today),
-          supabase
-            .from("quick_templates")
-            .select("*")
-            .eq("is_active", true)
-            .order("sort_order", { ascending: true })
-            .order("created_at", { ascending: true }),
-        ]);
+      const [
+        childRes,
+        phrasesRes,
+        recordRes,
+        childrenRes,
+        recordsRes,
+        templatesRes,
+        activityItemsRes,
+      ] = await Promise.all([
+        supabase.from("children").select("*").eq("id", childId).single(),
+        supabase
+          .from("phrase_bank")
+          .select("*")
+          .order("sort_order", { ascending: true }),
+        supabase
+          .from("daily_records")
+          .select("*")
+          .eq("child_id", childId)
+          .eq("date", today)
+          .maybeSingle(),
+        supabase
+          .from("children")
+          .select("*")
+          .eq("is_active", true)
+          .order("name_kana", { ascending: true }),
+        supabase
+          .from("daily_records")
+          .select("*")
+          .eq("date", today),
+        supabase
+          .from("quick_templates")
+          .select("*")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("activity_items")
+          .select("*")
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: true }),
+      ]);
 
       setChild(childRes.data as Child | null);
       setPhrases((phrasesRes.data as Phrase[]) ?? []);
@@ -101,14 +119,26 @@ export default function RecordPage() {
       const allTemplates = (templatesRes.data as QuickTemplate[]) ?? [];
       setTopicsTemplates(allTemplates.filter((t) => t.field_type === "topics"));
       setNotesTemplates(allTemplates.filter((t) => t.field_type === "notes"));
+      setActivityItems((activityItemsRes.data as ActivityItem[]) ?? []);
 
       // 既存記録があれば復元
       const existingData = recordRes.data as DailyRecord | null;
       if (existingData) {
         setExistingRecord(existingData);
         setMood(existingData.mood);
-        setActivities(existingData.activities);
         setSelectedPhrases(existingData.phrases);
+
+        // 既存記録に紐づく活動項目選択を復元
+        const { data: draRaw } = await supabase
+          .from("daily_record_activities")
+          .select("*")
+          .eq("daily_record_id", existingData.id);
+        const dra = (draRaw as DailyRecordActivity[] | null) ?? [];
+        const nextSelections: Record<string, string> = {};
+        for (const row of dra) {
+          nextSelections[row.activity_item_id] = row.detail ?? "";
+        }
+        setItemSelections(nextSelections);
         setTopics(existingData.topics ?? "");
         // 後方互換: topics/notes が未設定かつ memo がある場合、notes に移行表示
         setNotes(
@@ -129,12 +159,19 @@ export default function RecordPage() {
     fetchData();
   }, [childId, today]);
 
-  const toggleActivity = (activity: string) => {
-    setActivities((prev) =>
-      prev.includes(activity)
-        ? prev.filter((a) => a !== activity)
-        : [...prev, activity]
-    );
+  const toggleActivityItem = (itemId: string) => {
+    setItemSelections((prev) => {
+      if (itemId in prev) {
+        const { [itemId]: _removed, ...rest } = prev;
+        void _removed;
+        return rest;
+      }
+      return { ...prev, [itemId]: "" };
+    });
+  };
+
+  const setActivityDetail = (itemId: string, detail: string) => {
+    setItemSelections((prev) => ({ ...prev, [itemId]: detail }));
   };
 
   const togglePhrase = (phrase: string) => {
@@ -154,6 +191,14 @@ export default function RecordPage() {
     setter(trimmed.length === 0 ? text : `${current}\n${text}`);
   };
 
+  // 選択中の活動項目名 (+詳細) を文字列配列として構築（AI / legacy 保存用）
+  const selectedActivityNames: string[] = activityItems
+    .filter((item) => item.id in itemSelections)
+    .map((item) => {
+      const detail = itemSelections[item.id]?.trim();
+      return detail ? `${item.name}（${detail}）` : item.name;
+    });
+
   const handleAIGenerate = async () => {
     if (!child) return;
     setGenerating(true);
@@ -167,7 +212,7 @@ export default function RecordPage() {
           school: child.school,
           grade: child.grade,
           mood,
-          activities,
+          activities: selectedActivityNames,
           phrases: selectedPhrases,
           topics,
           notes,
@@ -236,11 +281,12 @@ export default function RecordPage() {
       child_id: childId,
       date: today,
       mood,
-      activities,
+      // legacy カラム: 後方互換のため活動名（+詳細）を text[] にも書いておく。表示系が連結テーブル対応するまでの橋渡し
+      activities: selectedActivityNames,
       phrases: selectedPhrases,
       topics: topics.trim() || null,
       notes: notes.trim() || null,
-      // memo は新フォーマット移行のため null クリア（過去データは上書きしない保存方針なら維持）
+      // memo は新フォーマット移行のため null クリア
       memo: null,
       ai_text: aiText.trim() || null,
       arrival_time: arrivalTime || null,
@@ -249,13 +295,39 @@ export default function RecordPage() {
       recorded_by: user.id,
     };
 
+    let savedRecordId: string | null = null;
     if (existingRecord) {
-      await supabase
+      const { data: updated } = await supabase
         .from("daily_records")
         .update(recordData)
-        .eq("id", existingRecord.id);
+        .eq("id", existingRecord.id)
+        .select("id")
+        .single();
+      savedRecordId = (updated as { id: string } | null)?.id ?? existingRecord.id;
     } else {
-      await supabase.from("daily_records").insert(recordData);
+      const { data: inserted } = await supabase
+        .from("daily_records")
+        .insert(recordData)
+        .select("id")
+        .single();
+      savedRecordId = (inserted as { id: string } | null)?.id ?? null;
+    }
+
+    // 活動項目連結テーブルを delete → insert で同期
+    if (savedRecordId) {
+      await supabase
+        .from("daily_record_activities")
+        .delete()
+        .eq("daily_record_id", savedRecordId);
+
+      const rows = Object.entries(itemSelections).map(([activityItemId, detail]) => ({
+        daily_record_id: savedRecordId as string,
+        activity_item_id: activityItemId,
+        detail: detail.trim() || null,
+      }));
+      if (rows.length > 0) {
+        await supabase.from("daily_record_activities").insert(rows);
+      }
     }
 
     // 次の未記録児童へ自動遷移
@@ -368,21 +440,55 @@ export default function RecordPage() {
           </div>
         </div>
 
-        {/* 活動 */}
+        {/* 活動内容（活動マスタから） */}
         <div>
           <label className="text-[14px] font-medium text-foreground">
             活動内容
           </label>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {ACTIVITIES.map((activity) => (
-              <Chip
-                key={activity}
-                label={activity}
-                selected={activities.includes(activity)}
-                onToggle={() => toggleActivity(activity)}
-              />
-            ))}
-          </div>
+          {activityItems.length === 0 ? (
+            <p className="mt-2 rounded-xl border border-dashed border-border bg-white px-3 py-4 text-center text-[13px] text-sub">
+              活動項目が登録されていません。
+              <br />
+              管理者は「設定 &gt; 活動マスタ管理」から項目を追加してください。
+            </p>
+          ) : (
+            <div className="mt-2 flex flex-col gap-2">
+              {activityItems.filter((i) => i.is_active).map((item) => {
+                const selected = item.id in itemSelections;
+                return (
+                  <div key={item.id}>
+                    <button
+                      type="button"
+                      onClick={() => toggleActivityItem(item.id)}
+                      className={`
+                        tap-target w-full rounded-xl border px-3 py-2.5 text-left text-[14px]
+                        transition-colors duration-150
+                        ${
+                          selected
+                            ? "border-primary bg-primary-light text-primary font-medium"
+                            : "border-border bg-white text-foreground"
+                        }
+                      `}
+                    >
+                      <span className="mr-1.5">{selected ? "☑" : "☐"}</span>
+                      {item.name}
+                    </button>
+                    {selected && item.has_detail_field && (
+                      <div className="mt-1.5 pl-4">
+                        <Textarea
+                          value={itemSelections[item.id] ?? ""}
+                          onChange={(e) =>
+                            setActivityDetail(item.id, e.target.value)
+                          }
+                          placeholder="詳細内容を入力（任意）"
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* フレーズ */}

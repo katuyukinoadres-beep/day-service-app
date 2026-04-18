@@ -17,6 +17,19 @@
 
 ## [Unreleased]
 
+### Changed (Phase B3: 記録入力を活動マスタに切替)
+- 記録入力画面の活動内容を、ハードコード9項目 enum（工作/運動/学習/…）から**施設カスタマイズの活動マスタ**に切替
+- 活動項目が `has_detail_field = true` の場合、選択時にインラインで詳細記入欄を展開（例: 漢字トレーニング→「三文字熟語」）
+- 保存時は `daily_record_activities` 連結テーブルに `{daily_record_id, activity_item_id, detail}` を永続化
+- 後方互換: `daily_records.activities text[]` にも「項目名（詳細）」形式で書き込み、履歴・帳票表示の既存コードを維持
+- AI記録生成プロンプトにも詳細付きの活動名を渡す
+- 活動マスタ未登録の施設向けに「設定 &gt; 活動マスタ管理 から追加してください」の空状態メッセージ
+
+### Added (マイグレーション 012: activity_items デフォルト)
+- 関数 `seed_default_activity_items(facility_id)`: 紙フォーム準拠の5項目を投入（眼球運動 / 宿題 / 漢字トレーニング〈詳細〉/ 計算トレーニング〈詳細〉/ その他取り組み〈詳細〉）
+- 既存施設へのバックフィル + `facilities` insert トリガーによる新規自動シード
+- Idempotent: 1件以上の項目がある施設には再投入しない
+
 ### Added (Phase B6: 音声入力)
 - `VoiceInputButton` コンポーネント新設。Web Speech API (SpeechRecognition) ベース
 - 記録入力画面の「活動中のトピックス」「特記事項」ラベル右に配置、タップで録音開始→停止で本文に追記
