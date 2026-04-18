@@ -17,6 +17,11 @@
 
 ## [Unreleased]
 
+### Fixed (version + commit SHA 反映)
+- `apps/main/next.config.ts` で `VERCEL_GIT_COMMIT_SHA` 未設定時に `git rev-parse --short HEAD` を読むフォールバックを追加。CLI デプロイでも正しい SHA が表示されるように
+- monorepo 全 `package.json` を `1.1.0-dev.1` に bump（Phase B1〜B2a の実装を反映）
+- 以降 Phase B 系の PR ごとに pre-release identifier（`-dev.N`）を繰り上げていき、Phase B が全部揃ったら `1.1.0` で正式リリース予定
+
 ### Fixed (Phase B2a fix: テンプレート追加エラーとデフォルト不在)
 - `/settings/quick-templates/new` の保存失敗時に画面に何も出ないバグを修正（エラー表示とログを追加、`useProfile` 未ロード時に保存ボタンが無反応になる問題の原因も除去）
 - マイグレーション 011 追加: 既定テンプレートを全ユーザーに自動投入
