@@ -149,16 +149,7 @@ export default function HistoryPage() {
                     {record.activities.join("・")}
                   </p>
                 )}
-                {record.phrases.length > 0 && (
-                  <div>
-                    <span className="text-sub">フレーズ: </span>
-                    <ul className="ml-4 mt-0.5 list-disc">
-                      {record.phrases.map((p, i) => (
-                        <li key={i}>{p}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                {/* 記録フレーズは AI への入力ヒントであり最終出力には含めない */}
                 {record.topics && (
                   <p>
                     <span className="text-sub">活動中のトピックス: </span>

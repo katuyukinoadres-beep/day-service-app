@@ -282,22 +282,7 @@ export default function ServiceRecordPage() {
                         : "—"}
                     </td>
                   </tr>
-                  <tr className="border-b border-border">
-                    <th className="bg-gray-50 px-3 py-2 text-left font-medium">
-                      記録フレーズ
-                    </th>
-                    <td className="px-3 py-2">
-                      {currentRecord.phrases.length > 0 ? (
-                        <ul className="list-disc ml-4">
-                          {currentRecord.phrases.map((p, i) => (
-                            <li key={i}>{p}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                  </tr>
+                  {/* 記録フレーズは AI への入力ヒントであり最終出力（国保連エビデンス）には含めない */}
                   <tr className="border-b border-border">
                     <th className="bg-gray-50 px-3 py-2 text-left font-medium">
                       活動中のトピックス
