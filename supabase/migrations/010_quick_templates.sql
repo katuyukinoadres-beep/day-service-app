@@ -6,7 +6,7 @@
 -- クイックテンプレート（ユーザーごと、field_type で topics/notes を区別）
 -- ============================================================
 create table quick_templates (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   user_id uuid not null references profiles(id) on delete cascade,
   field_type text not null check (field_type in ('topics', 'notes')),
   text text not null,
