@@ -17,6 +17,14 @@
 
 ## [Unreleased]
 
+### Added (Phase B8a フォローアップ: 退職時の強制ログアウト)
+- ミドルウェア `packages/shared/src/supabase/middleware.ts` を拡張
+  - 認証済みリクエスト時に `profiles.is_active` を確認、`false` なら `supabase.auth.signOut()` 実行して `/login?reason=deactivated` にリダイレクト
+- ログイン画面にアンバー色の「このアカウントは無効化されました。管理者にお問い合わせください」バナーを表示（`?reason=deactivated` クエリ付きアクセス時）
+- `useSearchParams` 使用のため `<Suspense>` ラッパー追加
+- 従来 RLS で「空ページが見える」だけだったのを「ログアウト→案内表示」に改善
+- monorepo 全 `package.json` を `1.1.0-dev.9` に bump
+
 ### Added (Phase B8b: 紙併用モード)
 - `facilities.paper_mode_enabled boolean default false` カラム追加（マイグレーション 014）
 - 施設設定画面 `/settings/facility` に紙併用モードトグル追加（admin のみ操作可）
