@@ -17,6 +17,18 @@
 
 ## [Unreleased]
 
+### Added (Phase B8a: スタッフ退職時の即時アカウント遮断)
+- `profiles` テーブルに `is_active boolean default true` カラム追加（マイグレーション 013）
+- 関連RLSポリシー群を更新: `profiles.is_active = false` のユーザーは所属施設データ（children/daily_records/activity_items 等）への SELECT/INSERT/UPDATE/DELETE を全面遮断
+- スタッフ管理画面 `/settings/staff` にセクション分離表示:
+  - 有効なスタッフ（ロール変更・退職処理可）
+  - 退職処理済（半透明 + 「退職処理済」ラベル + 復帰ボタン）
+- 「退職」ボタン: 確認ダイアログ後に `is_active = false`、施設データアクセスが即時遮断（過去記録は維持）
+- 「復帰」ボタン: `is_active = true` に戻す（誤操作の救済）
+- **BYOD前提の必須要件 AUTH-006 を実装**。退職者の個人スマホから即座に施設情報を見られなくする
+- 注: quick_templates はユーザー個別データのため、退職時は自分のテンプレへのアクセスも遮断される
+- monorepo 全 `package.json` を `1.1.0-dev.6` に bump
+
 ### Fixed (記録フレーズを最終出力から除外)
 - 記録フレーズは AI への入力ヒント（AI支援記録まとめ生成用）であり、最終出力（外部配布物）には含めないという原則を実装で徹底
 - `buildRitalicoDailyReport`（B3a の日報まるごとコピー）から 記録フレーズ セクション削除
