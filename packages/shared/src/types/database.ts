@@ -35,6 +35,7 @@ export type Database = {
           display_name: string;
           role: "admin" | "staff";
           is_super_admin: boolean;
+          is_active: boolean;
           created_at: string;
         };
         Insert: {
@@ -43,6 +44,7 @@ export type Database = {
           display_name: string;
           role?: "admin" | "staff";
           is_super_admin?: boolean;
+          is_active?: boolean;
           created_at?: string;
         };
         Update: {
@@ -51,6 +53,7 @@ export type Database = {
           display_name?: string;
           role?: "admin" | "staff";
           is_super_admin?: boolean;
+          is_active?: boolean;
           created_at?: string;
         };
         Relationships: [];
