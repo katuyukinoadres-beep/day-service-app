@@ -376,7 +376,7 @@ push / PR作成
 |------|---|
 | ダッシュボード | https://console.anthropic.com |
 | 用途 | Claude APIによるAI支援記録生成 |
-| 使用モデル | `claude-sonnet-4-5-20250929` |
+| 使用モデル | `claude-opus-4-7` |
 | プラン | 従量課金 |
 
 ---
