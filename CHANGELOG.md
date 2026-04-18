@@ -17,6 +17,14 @@
 
 ## [Unreleased]
 
+### Added (Phase B8b: 紙併用モード)
+- `facilities.paper_mode_enabled boolean default false` カラム追加（マイグレーション 014）
+- 施設設定画面 `/settings/facility` に紙併用モードトグル追加（admin のみ操作可）
+- ホーム画面に紙併用モード案内バナー表示（有効時のみ、amber系の目立たない色で常設）
+- 用途: 紙→アプリ切替の移行期（推奨2週間）に「紙でも OK」を明示、現場の心理的負担を軽減
+- 切替操作: 全員の習熟後に admin が OFF へ戻してデジタル必須運用へ移行
+- monorepo 全 `package.json` を `1.1.0-dev.8` に bump
+
 ### Fixed (活動中のトピックスも最終出力から除外)
 - 活動中のトピックス（topics）も記録フレーズ同様、AI生成の入力ヒントに位置づけ。最終出力から除外
 - `buildRitalicoDailyReport`（日報まるごとコピー）から「【活動中のトピックス】」セクション削除

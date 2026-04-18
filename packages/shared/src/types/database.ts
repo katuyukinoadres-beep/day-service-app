@@ -8,6 +8,7 @@ export type Database = {
           is_active: boolean;
           plan: string | null;
           notes: string | null;
+          paper_mode_enabled: boolean;
           created_at: string;
         };
         Insert: {
@@ -16,6 +17,7 @@ export type Database = {
           is_active?: boolean;
           plan?: string | null;
           notes?: string | null;
+          paper_mode_enabled?: boolean;
           created_at?: string;
         };
         Update: {
@@ -24,6 +26,7 @@ export type Database = {
           is_active?: boolean;
           plan?: string | null;
           notes?: string | null;
+          paper_mode_enabled?: boolean;
           created_at?: string;
         };
         Relationships: [];

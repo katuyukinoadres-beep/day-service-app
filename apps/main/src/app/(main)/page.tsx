@@ -14,6 +14,7 @@ function getToday(): string {
 export default function HomePage() {
   const [children, setChildren] = useState<Child[]>([]);
   const [records, setRecords] = useState<DailyRecord[]>([]);
+  const [paperMode, setPaperMode] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const today = getToday();
@@ -28,7 +29,7 @@ export default function HomePage() {
     const fetchData = async () => {
       const supabase = createClient();
 
-      const [childrenRes, recordsRes] = await Promise.all([
+      const [childrenRes, recordsRes, userRes] = await Promise.all([
         supabase
           .from("children")
           .select("*")
@@ -38,10 +39,31 @@ export default function HomePage() {
           .from("daily_records")
           .select("*")
           .eq("date", today),
+        supabase.auth.getUser(),
       ]);
 
       setChildren((childrenRes.data as Child[]) ?? []);
       setRecords((recordsRes.data as DailyRecord[]) ?? []);
+
+      const userId = userRes.data.user?.id;
+      if (userId) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("facility_id")
+          .eq("id", userId)
+          .single();
+        const profile = profileData as { facility_id: string } | null;
+        if (profile) {
+          const { data: facData } = await supabase
+            .from("facilities")
+            .select("paper_mode_enabled")
+            .eq("id", profile.facility_id)
+            .single();
+          const fac = facData as { paper_mode_enabled: boolean } | null;
+          setPaperMode(fac?.paper_mode_enabled ?? false);
+        }
+      }
+
       setLoading(false);
     };
     fetchData();
@@ -84,6 +106,16 @@ export default function HomePage() {
           </div>
         )}
       </header>
+
+      {paperMode && (
+        <div className="mx-4 mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5">
+          <p className="text-[13px] text-amber-900">
+            <span className="font-semibold">紙併用モード 有効</span>
+            <br />
+            移行期のため、紙で記入しても問題ありません。余裕のあるタイミングでアプリ入力に慣れていってください。
+          </p>
+        </div>
+      )}
 
       <div className="px-4 py-4">
         {loading ? (
