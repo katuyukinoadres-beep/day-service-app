@@ -17,6 +17,16 @@
 
 ## [Unreleased]
 
+### Added (Phase B2a: クイック入力テンプレート)
+- `quick_templates` テーブル新設（マイグレーション 010）。ユーザー（先生）ごとに作成、`field_type` で topics/notes を区別、論理削除対応
+- RLS ポリシー: 自分のテンプレのみ CRUD 可（他の先生からは見えない）
+- `packages/shared/src/types/database.ts` に `QuickTemplate` 型追加
+- 設定画面に「クイック入力テンプレート」メニューを追加（全ユーザー、個人設定）
+- `/settings/quick-templates` ページ: topics/notes を分けて一覧表示、セクションごとに追加可能
+- `/settings/quick-templates/new` ページ: 新規テンプレート追加（`?type=topics|notes` でプリセット可）
+- `/settings/quick-templates/[templateId]` ページ: 編集・有効/無効・削除
+- 記録入力画面の「活動中のトピックス」「特記事項」欄にクイック入力ボタン（チップ）を配置、タップで本文に追記（既存入力がある場合は改行区切りで追加）
+
 ### Changed (Phase B2: フリー記述欄を紙フォーム準拠で分離)
 - `daily_records` テーブルに `topics`（活動中のトピックス）と `notes`（特記事項）カラムを追加（マイグレーション 009）
 - 記録入力画面の「メモ」欄を「活動中のトピックス」「特記事項」の2つの独立した欄に分離
