@@ -3,7 +3,6 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@patto/shared/supabase/client";
-import { useProfile } from "@/lib/useProfile";
 import { Header } from "@/components/ui/Header";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -11,11 +10,11 @@ import { Button } from "@/components/ui/Button";
 function NewQuickTemplateForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { profile } = useProfile();
   const initialType =
     (searchParams.get("type") as "topics" | "notes" | null) ?? "topics";
 
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     field_type: initialType as "topics" | "notes",
     text: "",
@@ -23,25 +22,39 @@ function NewQuickTemplateForm() {
   });
 
   const handleSave = async () => {
-    if (!form.text.trim() || !profile) return;
+    if (!form.text.trim()) return;
     setSaving(true);
+    setError(null);
 
     const supabase = createClient();
     const {
       data: { user },
+      error: userError,
     } = await supabase.auth.getUser();
-    if (!user) {
+
+    if (userError || !user) {
+      setError(
+        `ユーザー情報を取得できませんでした: ${userError?.message ?? "未認証"}`
+      );
       setSaving(false);
       return;
     }
 
-    await supabase.from("quick_templates").insert({
-      user_id: user.id,
-      field_type: form.field_type,
-      text: form.text.trim(),
-      sort_order: form.sort_order,
-      is_active: true,
-    });
+    const { error: insertError } = await supabase
+      .from("quick_templates")
+      .insert({
+        user_id: user.id,
+        field_type: form.field_type,
+        text: form.text.trim(),
+        sort_order: form.sort_order,
+        is_active: true,
+      });
+
+    if (insertError) {
+      setError(`保存に失敗しました: ${insertError.message}`);
+      setSaving(false);
+      return;
+    }
 
     router.push("/settings/quick-templates");
     router.refresh();
@@ -96,6 +109,12 @@ function NewQuickTemplateForm() {
           }
           placeholder="0"
         />
+
+        {error && (
+          <p className="text-[13px] text-red-600 bg-red-50 p-3 rounded-lg whitespace-pre-wrap">
+            {error}
+          </p>
+        )}
 
         <div className="pb-4">
           <Button
