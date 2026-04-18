@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { Textarea } from "@/components/ui/Input";
 import { VoiceInputButton } from "@/components/VoiceInputButton";
+import { CopyButton } from "@/components/CopyButton";
 import type {
   Child,
   Phrase,
@@ -32,6 +33,89 @@ function getToday(): string {
 function getCurrentTime(): string {
   const d = new Date();
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function buildRitalicoDailyReport(params: {
+  date: string;
+  childName: string;
+  arrivalTime: string;
+  departureTime: string;
+  moodLabel: string;
+  selectedActivityNames: string[];
+  selectedPhrases: string[];
+  topics: string;
+  notes: string;
+  aiText: string;
+  pickupMethod: string;
+}): string {
+  const {
+    date,
+    childName,
+    arrivalTime,
+    departureTime,
+    moodLabel,
+    selectedActivityNames,
+    selectedPhrases,
+    topics,
+    notes,
+    aiText,
+    pickupMethod,
+  } = params;
+
+  const lines: string[] = [];
+  lines.push(`【実施日】 ${date}`);
+  lines.push(`【児童名】 ${childName}`);
+  const timeRange =
+    arrivalTime && departureTime
+      ? `${arrivalTime} 〜 ${departureTime}`
+      : arrivalTime
+        ? `${arrivalTime} 〜`
+        : departureTime
+          ? `〜 ${departureTime}`
+          : "";
+  if (timeRange) lines.push(`【サービス提供時間】 ${timeRange}`);
+  lines.push(`【気分】 ${moodLabel}`);
+
+  if (selectedActivityNames.length > 0) {
+    lines.push("");
+    lines.push("【活動内容】");
+    for (const name of selectedActivityNames) {
+      lines.push(`・${name}`);
+    }
+  }
+
+  if (selectedPhrases.length > 0) {
+    lines.push("");
+    lines.push("【記録フレーズ】");
+    for (const p of selectedPhrases) {
+      lines.push(`・${p}`);
+    }
+  }
+
+  if (topics.trim()) {
+    lines.push("");
+    lines.push("【活動中のトピックス】");
+    lines.push(topics.trim());
+  }
+
+  if (notes.trim()) {
+    lines.push("");
+    lines.push("【特記事項】");
+    lines.push(notes.trim());
+  }
+
+  if (aiText.trim()) {
+    lines.push("");
+    lines.push("【支援記録まとめ】");
+    lines.push(aiText.trim());
+  }
+
+  if (pickupMethod) {
+    lines.push("");
+    lines.push(`【送迎方法】 ${pickupMethod}`);
+  }
+
+  return lines.join("\n");
 }
 
 export default function RecordPage() {
@@ -641,6 +725,13 @@ export default function RecordPage() {
             onChange={(e) => setAiText(e.target.value)}
             placeholder="直接入力、またはAIで下書きを作成できます"
           />
+          <div className="mt-2 flex justify-end">
+            <CopyButton
+              label="記録まとめだけコピー"
+              variant="secondary"
+              text={() => aiText.trim()}
+            />
+          </div>
         </div>
 
         {/* 送迎方法 */}
@@ -660,6 +751,37 @@ export default function RecordPage() {
               />
             ))}
           </div>
+        </div>
+
+        {/* リタリコ等への転記用まるごとコピー */}
+        <div className="rounded-xl border border-border bg-white p-3">
+          <p className="text-[13px] font-medium text-foreground mb-1">
+            リタリコ等への転記用
+          </p>
+          <p className="text-[11px] text-sub mb-2">
+            現在の入力内容を日報フォーマットで一括コピーします
+          </p>
+          <CopyButton
+            label="日報まるごとコピー"
+            variant="primary"
+            fullWidth
+            text={() =>
+              buildRitalicoDailyReport({
+                date: today,
+                childName: child.name,
+                arrivalTime,
+                departureTime,
+                moodLabel:
+                  MOODS.find((m) => m.value === mood)?.label ?? "未選択",
+                selectedActivityNames,
+                selectedPhrases,
+                topics,
+                notes,
+                aiText,
+                pickupMethod,
+              })
+            }
+          />
         </div>
 
         {/* 保存 */}
