@@ -17,6 +17,14 @@
 
 ## [Unreleased]
 
+### Added (Phase B6: 音声入力)
+- `VoiceInputButton` コンポーネント新設。Web Speech API (SpeechRecognition) ベース
+- 記録入力画面の「活動中のトピックス」「特記事項」ラベル右に配置、タップで録音開始→停止で本文に追記
+- 対応状況: Chrome / Safari / Edge（Android/iOS 主要モバイルブラウザで動作）。非対応ブラウザではボタン非表示
+- 日本語（ja-JP）認識に設定、非連続モード（1発話で完結、再度タップで追加入力）
+- エラー表示: マイク拒否、音声未検出、その他 SpeechRecognition エラーを画面にフィードバック
+- monorepo 全 `package.json` を `1.1.0-dev.2` に bump
+
 ### Fixed (version + commit SHA 反映)
 - `apps/main/next.config.ts` で `VERCEL_GIT_COMMIT_SHA` 未設定時に `git rev-parse --short HEAD` を読むフォールバックを追加。CLI デプロイでも正しい SHA が表示されるように
 - monorepo 全 `package.json` を `1.1.0-dev.1` に bump（Phase B1〜B2a の実装を反映）

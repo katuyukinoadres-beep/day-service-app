@@ -6,6 +6,7 @@ import { createClient } from "@patto/shared/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { Textarea } from "@/components/ui/Input";
+import { VoiceInputButton } from "@/components/VoiceInputButton";
 import type { Child, Phrase, DailyRecord, QuickTemplate } from "@patto/shared/types";
 
 const ACTIVITIES = [
@@ -432,9 +433,15 @@ export default function RecordPage() {
 
         {/* 活動中のトピックス（紙フォーム準拠） */}
         <div>
-          <label className="text-[14px] font-medium text-foreground mb-1 block">
-            活動中のトピックス
-          </label>
+          <div className="mb-1 flex items-center justify-between">
+            <label className="text-[14px] font-medium text-foreground">
+              活動中のトピックス
+            </label>
+            <VoiceInputButton
+              label="音声入力"
+              onAppend={(t) => appendToField(topics, setTopics, t)}
+            />
+          </div>
           <p className="text-[12px] text-sub mb-1.5">
             活動中の様子・エピソード
           </p>
@@ -461,9 +468,15 @@ export default function RecordPage() {
 
         {/* 特記事項（紙フォーム準拠） */}
         <div>
-          <label className="text-[14px] font-medium text-foreground mb-1 block">
-            特記事項
-          </label>
+          <div className="mb-1 flex items-center justify-between">
+            <label className="text-[14px] font-medium text-foreground">
+              特記事項
+            </label>
+            <VoiceInputButton
+              label="音声入力"
+              onAppend={(t) => appendToField(notes, setNotes, t)}
+            />
+          </div>
           <p className="text-[12px] text-sub mb-1.5">
             異常事態・重要な気づき・連絡事項
           </p>
