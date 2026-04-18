@@ -53,6 +53,18 @@ npx vercel --prod --yes   # 本番デプロイ（ルートから実行）
 - Vercelプロジェクト設定: `.vercel/project.json` にリンク済み
 - ルートディレクトリから `npx vercel --prod --yes` で実行
 
+## バージョニング
+- **Single source of truth**: root `package.json` の `version` フィールド
+- **SemVer運用**: major（破壊的変更）/ minor（機能追加）/ patch（修正・改善）
+- **表示**: 設定画面下部に `v{version} ({shortSha})` を表示（`VersionBadge` コンポーネント）
+- **注入**: `apps/main/next.config.ts` でビルド時に `NEXT_PUBLIC_APP_VERSION` と `NEXT_PUBLIC_COMMIT_SHA` を環境変数として設定
+- **リリース手順**:
+  1. featureブランチで機能実装
+  2. root + 各 workspace の `package.json` の version を bump（全て同じバージョンに揃える）
+  3. `CHANGELOG.md` に変更を追記（Added / Changed / Fixed 等のカテゴリ別）
+  4. PR → マージ → 本番デプロイ
+  5. `CHANGELOG.md` で各バージョンのリリース日を記録
+
 ## ドキュメント更新対象（自動実行フローのステップ3で使用）
 - `docs/01_要件定義書.md` - 機能要件に変更がある場合
 - `docs/02_画面設計書.md` - UI変更がある場合

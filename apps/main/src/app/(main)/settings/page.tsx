@@ -7,6 +7,7 @@ import { useProfile } from "@/lib/useProfile";
 import { Header } from "@/components/ui/Header";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { VersionBadge } from "@/components/VersionBadge";
 
 const ChevronIcon = () => (
   <svg
@@ -120,6 +121,8 @@ export default function SettingsPage() {
                 ログアウト
               </Button>
             </div>
+
+            <VersionBadge />
           </>
         )}
       </div>
