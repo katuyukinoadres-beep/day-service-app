@@ -282,15 +282,7 @@ export default function ServiceRecordPage() {
                         : "—"}
                     </td>
                   </tr>
-                  {/* 記録フレーズは AI への入力ヒントであり最終出力（国保連エビデンス）には含めない */}
-                  <tr className="border-b border-border">
-                    <th className="bg-gray-50 px-3 py-2 text-left font-medium">
-                      活動中のトピックス
-                    </th>
-                    <td className="px-3 py-2 whitespace-pre-wrap">
-                      {currentRecord.topics || "—"}
-                    </td>
-                  </tr>
+                  {/* 記録フレーズ・活動中のトピックスは AI への入力ヒントであり最終出力（国保連エビデンス）には含めない */}
                   <tr className="border-b border-border">
                     <th className="bg-gray-50 px-3 py-2 text-left font-medium">
                       特記事項
