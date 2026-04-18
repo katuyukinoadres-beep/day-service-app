@@ -1,6 +1,8 @@
 # データベース設計書
 
 > プロジェクト: **ぱっと記録（Patto Kiroku）**  |  docs-template v1.0 準拠
+>
+> v1.1.0 spec-reset: 2026-04-18 に NiKo ビジョンへの整合を目的として、Phase 1.1 予定スキーマ変更（活動マスタ化、日次記録のフィールド分割）を §9 に追記。実マイグレーションは Phase B1 実装時に適用予定。
 
 ---
 
@@ -429,6 +431,127 @@ CREATE POLICY "Users can view phrases"
 | ポイントインタイムリカバリ | Supabase Pro プラン: 対応 |
 | 手動エクスポート | Supabase Dashboard からSQL/CSVエクスポート可能 |
 | Free プランの制約 | 自動バックアップなし。手動エクスポートで対応 |
+
+---
+
+## 9. Phase 1.1 予定スキーマ変更（spec-reset による）
+
+2026-04-18 の spec-reset で確定した NiKo 整合のため、以下のスキーマ変更が必要。実マイグレーションは Phase B1 実装時に適用する。
+
+### 9.1 新テーブル: `activity_items`（活動マスタ）
+
+施設ごとの活動項目を管理するマスタテーブル。紙フォーム忠実度を確保し、Q6 I（将来のメニュー追加変更）に対応する。
+
+| カラム名 | 型 | 制約 | 説明 |
+|---------|---|------|------|
+| `id` | `uuid` | PK, DEFAULT `gen_random_uuid()` | 活動項目一意識別子 |
+| `facility_id` | `uuid` | FK → `facilities(id)`, NOT NULL | 所属施設ID |
+| `name` | `text` | NOT NULL | 活動項目名（例: 眼球運動 / 漢字トレーニング） |
+| `sort_order` | `integer` | NOT NULL, DEFAULT `0` | 表示順（昇順） |
+| `has_detail_field` | `boolean` | NOT NULL, DEFAULT `FALSE` | 詳細記入欄の有無。`TRUE` のとき記録側で詳細テキスト入力可能 |
+| `is_active` | `boolean` | NOT NULL, DEFAULT `TRUE` | 有効フラグ（論理削除用）。廃止項目は `FALSE` にして過去記録の整合性保持 |
+| `created_at` | `timestamptz` | NOT NULL, DEFAULT `now()` | 作成日時 |
+| `updated_at` | `timestamptz` | NOT NULL, DEFAULT `now()` | 更新日時（トリガーで自動更新） |
+
+**ユニーク制約**: `(facility_id, name)` -- 同一施設内での項目名重複を防ぐ
+
+**インデックス**:
+
+| インデックス名 | カラム | 種別 | 目的 |
+|--------------|-------|------|------|
+| `idx_activity_items_facility_active` | `facility_id, is_active, sort_order` | B-tree（複合） | 有効な活動項目を表示順で取得 |
+
+**初期データ（上田くん施設、`001_seed_ueda_activities.sql` 等で投入予定）**:
+
+| name | sort_order | has_detail_field |
+|------|-----------|------------------|
+| 眼球運動 | 1 | false |
+| 宿題 | 2 | false |
+| 漢字トレーニング | 3 | true |
+| 計算トレーニング | 4 | true |
+| その他取り組み | 5 | true |
+
+### 9.2 新テーブル: `daily_record_activities`（日次記録×活動の連結）
+
+日次記録でチェックされた活動項目と、各項目の詳細記入内容を保持する連結テーブル。
+
+| カラム名 | 型 | 制約 | 説明 |
+|---------|---|------|------|
+| `id` | `uuid` | PK, DEFAULT `gen_random_uuid()` | レコード一意識別子 |
+| `daily_record_id` | `uuid` | FK → `daily_records(id)` ON DELETE CASCADE, NOT NULL | 日次記録ID |
+| `activity_item_id` | `uuid` | FK → `activity_items(id)`, NOT NULL | 活動項目ID |
+| `detail` | `text` | NULL | 詳細記入内容（`activity_items.has_detail_field = TRUE` の項目のみ使用） |
+| `created_at` | `timestamptz` | NOT NULL, DEFAULT `now()` | 作成日時 |
+
+**ユニーク制約**: `(daily_record_id, activity_item_id)` -- 1記録1項目1回
+
+**インデックス**:
+
+| インデックス名 | カラム | 種別 | 目的 |
+|--------------|-------|------|------|
+| `idx_dra_daily_record_id` | `daily_record_id` | B-tree | 記録ごとの活動一覧取得 |
+| `idx_dra_activity_item_id` | `activity_item_id` | B-tree | 活動項目別集計（Phase 1.2 B層ダッシュボード用） |
+
+### 9.3 `daily_records` テーブルの変更
+
+紙フォームの「活動中のトピックス」「特記事項」を分離して記録可能にする。
+
+**廃止するカラム**:
+
+| カラム | 廃止理由 |
+|--------|---------|
+| `activities text[]` | 新テーブル `daily_record_activities` に置換 |
+
+**追加するカラム**:
+
+| カラム名 | 型 | 制約 | 説明 |
+|---------|---|------|------|
+| `topics` | `text` | NULL | 活動中のトピックス（フリー記述欄、音声入力対応） |
+| `notes` | `text` | NULL | 特記事項（フリー記述欄、音声入力対応） |
+
+**既存 `memo` カラムの扱い**: 後方互換のため当面残す。新規記録は `topics`/`notes` を優先使用。将来のマイグレーションで `memo` → `notes` への移行を検討。
+
+### 9.4 RLS ポリシー（新テーブル分）
+
+`activity_items` / `daily_record_activities` ともに `facility_id` ベースの施設分離パターンを踏襲。
+
+| テーブル | 操作 | ポリシー名 | 条件 |
+|---------|------|-----------|------|
+| `activity_items` | SELECT | `Users can view facility activity items` | `facility_id = (SELECT facility_id FROM profiles WHERE id = auth.uid())` |
+| `activity_items` | INSERT | `Admins can insert activity items` | `facility_id = (SELECT facility_id FROM profiles WHERE id = auth.uid()) AND (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin'` |
+| `activity_items` | UPDATE | `Admins can update activity items` | 同上 |
+| `activity_items` | DELETE | ポリシーなし（拒否） | 物理削除は不可、`is_active` による論理削除のみ |
+| `daily_record_activities` | SELECT | `Users can view facility record activities` | `daily_record_id IN (SELECT id FROM daily_records WHERE facility_id = ...)` |
+| `daily_record_activities` | ALL | `Users can manage facility record activities` | 同上 |
+
+### 9.5 マイグレーション予定
+
+| 番号 | ファイル名（予定） | 変更内容 |
+|------|-----------|---------|
+| 008 | `008_activity_items.sql` | `activity_items` テーブル作成 + RLS |
+| 009 | `009_daily_record_activities.sql` | `daily_record_activities` テーブル作成 + RLS |
+| 010 | `010_daily_records_field_split.sql` | `daily_records` に `topics` / `notes` カラム追加 |
+| 011 | `011_seed_ueda_activities.sql` | 上田くん施設の初期活動項目投入（実施時に施設IDを指定） |
+
+### 9.6 ER図（Phase 1.1 完了時の想定）
+
+```
+[facilities] 1───* [profiles]
+     |
+     ├── 1───* [activity_items]（新設、マスタ）
+     |              |
+     |              └── 1───* [daily_record_activities]（新設、連結）
+     |                              |
+     |              ┌───────────────┘
+     |              ↓
+     ├── 1───* [children] 1───* [daily_records]（topics/notes カラム追加）
+     |              |
+     |              └── 1───* [attendances]
+     |
+     └── 1───* [phrase_bank] (facility_id NULLable)
+
+[profiles] 1───* [daily_records] (recorded_by)
+```
 
 ---
 

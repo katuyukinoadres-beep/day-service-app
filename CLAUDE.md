@@ -3,11 +3,24 @@
 ## プロジェクト概要
 放課後等デイサービス支援記録アプリ「ぱっと記録」のモノレポ。
 
+**設計哲学（北極星）**: 「放デイ職員の手間を最小化し、子供と向き合う時間を最大化する」
+
+## 3層アーキテクチャ（NiKo ビジョン）
+| 層 | アプリ | 主な利用者 | 状態 |
+|---|--------|-----------|------|
+| **A** | `apps/main` | 現場スタッフ／保護者 | ✅ 実装済 |
+| **B** | `apps/facility-admin` | 事業所長（上田くん級） | 🔲 Phase 1.2 で追加予定 |
+| **C** | `apps/admin` | スーパー管理者（Leon／開発側） | ✅ 実装済 |
+
+> ⚠️ `apps/admin` は C（システムAdmin）。B（施設管理者ダッシュボード）とは別物。混同しないこと。
+
 ## 構成
-- `apps/main` - メインアプリ（Next.js 16 / React 19）
-- `apps/admin` - 管理画面（Next.js 16 / React 19）
+- `apps/main` - A層: ユーザーアプリ（Next.js 16 / React 19）
+- `apps/admin` - C層: システムAdmin管理画面（Next.js 16 / React 19）
+- `apps/facility-admin` - B層: 施設管理者ダッシュボード（🔲 Phase 1.2 で追加予定）
 - `packages/shared` - 共有ライブラリ（型定義、Supabaseクライアント、定数）
-- `docs/` - 設計ドキュメント一式（11ファイル）
+- `docs/` - 設計ドキュメント一式（11ファイル、v1.1.0 spec-reset で全面改訂）
+- `CHANGELOG.md` - 変更履歴（SemVer準拠）
 
 ## 技術スタック
 - Next.js 16.1.6 / React 19.2.3 / TypeScript 5
@@ -37,14 +50,16 @@ npx vercel --prod --yes   # 本番デプロイ（ルートから実行）
 | `ADMIN_PASSWORD` | 管理画面パスワード | サーバーのみ |
 
 ## DB構成（Supabase PostgreSQL）
-| テーブル | 説明 | 主なカラム |
-|---|---|---|
-| `facilities` | 施設 | name, is_active, plan |
-| `profiles` | ユーザー | facility_id, display_name, role(admin/staff) |
-| `children` | 児童 | facility_id, name, birth_date, domain_tags[] |
-| `daily_records` | 日次記録 | child_id, date, activities[], ai_text, mood |
-| `attendances` | 出席 | child_id, date, is_present |
-| `phrase_bank` | フレーズ | category, text, domain_tags[] |
+| テーブル | 説明 | 主なカラム | 状態 |
+|---|---|---|---|
+| `facilities` | 施設 | name, is_active, plan | 既存 |
+| `profiles` | ユーザー | facility_id, display_name, role(admin/staff) | 既存 |
+| `children` | 児童 | facility_id, name, birth_date, domain_tags[] | 既存 |
+| `daily_records` | 日次記録 | child_id, date, mood, ai_text | 既存（Phase B1で `topics`/`notes` カラム追加、`activities` 廃止予定） |
+| `attendances` | 出席 | child_id, date, is_present | 既存 |
+| `phrase_bank` | フレーズ | category, text, domain_tags[] | 既存 |
+| `activity_items` | 活動マスタ | facility_id, name, has_detail_field, is_active | 🔲 Phase B1 で追加予定 |
+| `daily_record_activities` | 日次記録×活動 | daily_record_id, activity_item_id, detail | 🔲 Phase B1 で追加予定 |
 
 ※ RLS（Row Level Security）で施設単位のデータ分離
 
