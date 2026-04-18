@@ -149,20 +149,14 @@ export default function HistoryPage() {
                     {record.activities.join("・")}
                   </p>
                 )}
-                {/* 記録フレーズは AI への入力ヒントであり最終出力には含めない */}
-                {record.topics && (
-                  <p>
-                    <span className="text-sub">活動中のトピックス: </span>
-                    {record.topics}
-                  </p>
-                )}
+                {/* 記録フレーズ・活動中のトピックスは AI への入力ヒントであり最終出力には含めない */}
                 {record.notes && (
                   <p>
                     <span className="text-sub">特記事項: </span>
                     {record.notes}
                   </p>
                 )}
-                {!record.topics && !record.notes && record.memo && (
+                {!record.notes && record.memo && (
                   <p>
                     <span className="text-sub">メモ（旧形式）: </span>
                     {record.memo}

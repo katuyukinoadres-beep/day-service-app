@@ -17,6 +17,15 @@
 
 ## [Unreleased]
 
+### Fixed (活動中のトピックスも最終出力から除外)
+- 活動中のトピックス（topics）も記録フレーズ同様、AI生成の入力ヒントに位置づけ。最終出力から除外
+- `buildRitalicoDailyReport`（日報まるごとコピー）から「【活動中のトピックス】」セクション削除
+- サービス提供記録帳票 DOC-002 から 活動中のトピックス 行削除
+- 履歴画面 `/history` から 活動中のトピックス 表示を削除
+- 記録入力画面でのトピックス入力 + クイック入力テンプレート + 音声入力 はそのまま機能（AI入力ヒントとして動作）
+- AI生成プロンプトには引き続き topics を渡す（入力ヒントとしての役割は維持）
+- monorepo 全 `package.json` を `1.1.0-dev.7` に bump
+
 ### Added (Phase B8a: スタッフ退職時の即時アカウント遮断)
 - `profiles` テーブルに `is_active boolean default true` カラム追加（マイグレーション 013）
 - 関連RLSポリシー群を更新: `profiles.is_active = false` のユーザーは所属施設データ（children/daily_records/activity_items 等）への SELECT/INSERT/UPDATE/DELETE を全面遮断
