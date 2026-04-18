@@ -42,7 +42,6 @@ function buildRitalicoDailyReport(params: {
   departureTime: string;
   moodLabel: string;
   selectedActivityNames: string[];
-  selectedPhrases: string[];
   topics: string;
   notes: string;
   aiText: string;
@@ -55,12 +54,13 @@ function buildRitalicoDailyReport(params: {
     departureTime,
     moodLabel,
     selectedActivityNames,
-    selectedPhrases,
     topics,
     notes,
     aiText,
     pickupMethod,
   } = params;
+
+  // NOTE: 記録フレーズ (phrases) は AI への入力ヒントであり最終出力ではないので意図的に含めない
 
   const lines: string[] = [];
   lines.push(`【実施日】 ${date}`);
@@ -81,14 +81,6 @@ function buildRitalicoDailyReport(params: {
     lines.push("【活動内容】");
     for (const name of selectedActivityNames) {
       lines.push(`・${name}`);
-    }
-  }
-
-  if (selectedPhrases.length > 0) {
-    lines.push("");
-    lines.push("【記録フレーズ】");
-    for (const p of selectedPhrases) {
-      lines.push(`・${p}`);
     }
   }
 
@@ -774,7 +766,6 @@ export default function RecordPage() {
                 moodLabel:
                   MOODS.find((m) => m.value === mood)?.label ?? "未選択",
                 selectedActivityNames,
-                selectedPhrases,
                 topics,
                 notes,
                 aiText,
