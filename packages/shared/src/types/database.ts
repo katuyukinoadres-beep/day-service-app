@@ -196,6 +196,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      quick_templates: {
+        Row: {
+          id: string;
+          user_id: string;
+          field_type: "topics" | "notes";
+          text: string;
+          sort_order: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          field_type: "topics" | "notes";
+          text: string;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          field_type?: "topics" | "notes";
+          text?: string;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       daily_record_activities: {
         Row: {
           id: string;
@@ -318,3 +351,6 @@ export type ActivityItemInsert = Database["public"]["Tables"]["activity_items"][
 export type ActivityItemUpdate = Database["public"]["Tables"]["activity_items"]["Update"];
 export type DailyRecordActivity = Database["public"]["Tables"]["daily_record_activities"]["Row"];
 export type DailyRecordActivityInsert = Database["public"]["Tables"]["daily_record_activities"]["Insert"];
+export type QuickTemplate = Database["public"]["Tables"]["quick_templates"]["Row"];
+export type QuickTemplateInsert = Database["public"]["Tables"]["quick_templates"]["Insert"];
+export type QuickTemplateUpdate = Database["public"]["Tables"]["quick_templates"]["Update"];

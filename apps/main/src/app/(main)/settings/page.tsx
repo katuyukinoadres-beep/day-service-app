@@ -78,6 +78,23 @@ export default function SettingsPage() {
               </Card>
             </Link>
 
+            <Link href="/settings/quick-templates">
+              <Card className="flex items-center gap-3 active:bg-gray-50 transition-colors">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#14B8A6] text-white text-[18px] shrink-0">
+                  ⚡
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[15px] font-medium text-foreground">
+                    クイック入力テンプレート
+                  </p>
+                  <p className="text-[13px] text-sub">
+                    トピックス・特記事項のワンタップ入力（個人設定）
+                  </p>
+                </div>
+                <ChevronIcon />
+              </Card>
+            </Link>
+
             {isAdmin && (
               <>
                 <Link href="/settings/activities">

@@ -6,7 +6,7 @@ import { createClient } from "@patto/shared/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { Textarea } from "@/components/ui/Input";
-import type { Child, Phrase, DailyRecord } from "@patto/shared/types";
+import type { Child, Phrase, DailyRecord, QuickTemplate } from "@patto/shared/types";
 
 const ACTIVITIES = [
   "工作", "運動", "学習", "自由遊び", "SST",
@@ -38,6 +38,8 @@ export default function RecordPage() {
 
   const [child, setChild] = useState<Child | null>(null);
   const [phrases, setPhrases] = useState<Phrase[]>([]);
+  const [topicsTemplates, setTopicsTemplates] = useState<QuickTemplate[]>([]);
+  const [notesTemplates, setNotesTemplates] = useState<QuickTemplate[]>([]);
   const [existingRecord, setExistingRecord] = useState<DailyRecord | null>(null);
   const [allChildren, setAllChildren] = useState<Child[]>([]);
   const [allRecords, setAllRecords] = useState<DailyRecord[]>([]);
@@ -61,7 +63,7 @@ export default function RecordPage() {
     const fetchData = async () => {
       const supabase = createClient();
 
-      const [childRes, phrasesRes, recordRes, childrenRes, recordsRes] =
+      const [childRes, phrasesRes, recordRes, childrenRes, recordsRes, templatesRes] =
         await Promise.all([
           supabase.from("children").select("*").eq("id", childId).single(),
           supabase
@@ -83,12 +85,21 @@ export default function RecordPage() {
             .from("daily_records")
             .select("*")
             .eq("date", today),
+          supabase
+            .from("quick_templates")
+            .select("*")
+            .eq("is_active", true)
+            .order("sort_order", { ascending: true })
+            .order("created_at", { ascending: true }),
         ]);
 
       setChild(childRes.data as Child | null);
       setPhrases((phrasesRes.data as Phrase[]) ?? []);
       setAllChildren((childrenRes.data as Child[]) ?? []);
       setAllRecords((recordsRes.data as DailyRecord[]) ?? []);
+      const allTemplates = (templatesRes.data as QuickTemplate[]) ?? [];
+      setTopicsTemplates(allTemplates.filter((t) => t.field_type === "topics"));
+      setNotesTemplates(allTemplates.filter((t) => t.field_type === "notes"));
 
       // 既存記録があれば復元
       const existingData = recordRes.data as DailyRecord | null;
@@ -131,6 +142,15 @@ export default function RecordPage() {
         ? prev.filter((p) => p !== phrase)
         : [...prev, phrase]
     );
+  };
+
+  const appendToField = (
+    current: string,
+    setter: (v: string) => void,
+    text: string
+  ) => {
+    const trimmed = current.trim();
+    setter(trimmed.length === 0 ? text : `${current}\n${text}`);
   };
 
   const handleAIGenerate = async () => {
@@ -418,6 +438,20 @@ export default function RecordPage() {
           <p className="text-[12px] text-sub mb-1.5">
             活動中の様子・エピソード
           </p>
+          {topicsTemplates.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {topicsTemplates.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => appendToField(topics, setTopics, t.text)}
+                  className="tap-target rounded-full border border-accent/30 bg-accent-light px-3 py-1 text-[13px] text-foreground active:bg-accent/10"
+                >
+                  + {t.text.length > 24 ? `${t.text.slice(0, 24)}…` : t.text}
+                </button>
+              ))}
+            </div>
+          )}
           <Textarea
             value={topics}
             onChange={(e) => setTopics(e.target.value)}
@@ -433,6 +467,20 @@ export default function RecordPage() {
           <p className="text-[12px] text-sub mb-1.5">
             異常事態・重要な気づき・連絡事項
           </p>
+          {notesTemplates.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {notesTemplates.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => appendToField(notes, setNotes, t.text)}
+                  className="tap-target rounded-full border border-accent/30 bg-accent-light px-3 py-1 text-[13px] text-foreground active:bg-accent/10"
+                >
+                  + {t.text.length > 24 ? `${t.text.slice(0, 24)}…` : t.text}
+                </button>
+              ))}
+            </div>
+          )}
           <Textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
