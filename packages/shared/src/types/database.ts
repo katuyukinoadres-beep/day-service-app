@@ -230,6 +230,8 @@ export type Database = {
           activities: string[];
           phrases: string[];
           memo: string | null;
+          topics: string | null;
+          notes: string | null;
           ai_text: string | null;
           arrival_time: string | null;
           departure_time: string | null;
@@ -247,6 +249,8 @@ export type Database = {
           activities?: string[];
           phrases?: string[];
           memo?: string | null;
+          topics?: string | null;
+          notes?: string | null;
           ai_text?: string | null;
           arrival_time?: string | null;
           departure_time?: string | null;
@@ -264,6 +268,8 @@ export type Database = {
           activities?: string[];
           phrases?: string[];
           memo?: string | null;
+          topics?: string | null;
+          notes?: string | null;
           ai_text?: string | null;
           arrival_time?: string | null;
           departure_time?: string | null;

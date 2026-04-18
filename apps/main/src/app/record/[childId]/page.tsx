@@ -48,7 +48,8 @@ export default function RecordPage() {
   const [mood, setMood] = useState<"good" | "neutral" | "bad" | null>(null);
   const [activities, setActivities] = useState<string[]>([]);
   const [selectedPhrases, setSelectedPhrases] = useState<string[]>([]);
-  const [memo, setMemo] = useState("");
+  const [topics, setTopics] = useState("");
+  const [notes, setNotes] = useState("");
   const [aiText, setAiText] = useState("");
   const [arrivalTime, setArrivalTime] = useState("");
   const [departureTime, setDepartureTime] = useState("");
@@ -96,7 +97,14 @@ export default function RecordPage() {
         setMood(existingData.mood);
         setActivities(existingData.activities);
         setSelectedPhrases(existingData.phrases);
-        setMemo(existingData.memo ?? "");
+        setTopics(existingData.topics ?? "");
+        // 後方互換: topics/notes が未設定かつ memo がある場合、notes に移行表示
+        setNotes(
+          existingData.notes ??
+            (!existingData.topics && existingData.memo
+              ? existingData.memo
+              : "")
+        );
         setAiText(existingData.ai_text ?? "");
         setArrivalTime(existingData.arrival_time ?? "");
         setDepartureTime(existingData.departure_time ?? "");
@@ -140,7 +148,8 @@ export default function RecordPage() {
           mood,
           activities,
           phrases: selectedPhrases,
-          memo,
+          topics,
+          notes,
         }),
       });
       if (res.ok) {
@@ -208,7 +217,10 @@ export default function RecordPage() {
       mood,
       activities,
       phrases: selectedPhrases,
-      memo: memo.trim() || null,
+      topics: topics.trim() || null,
+      notes: notes.trim() || null,
+      // memo は新フォーマット移行のため null クリア（過去データは上書きしない保存方針なら維持）
+      memo: null,
       ai_text: aiText.trim() || null,
       arrival_time: arrivalTime || null,
       departure_time: departureTime || null,
@@ -398,13 +410,33 @@ export default function RecordPage() {
           ))}
         </div>
 
-        {/* メモ（自由記入欄） */}
+        {/* 活動中のトピックス（紙フォーム準拠） */}
         <div>
-          <label className="text-[14px] font-medium text-foreground mb-1 block">メモ（自由記入）</label>
+          <label className="text-[14px] font-medium text-foreground mb-1 block">
+            活動中のトピックス
+          </label>
+          <p className="text-[12px] text-sub mb-1.5">
+            活動中の様子・エピソード
+          </p>
           <Textarea
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
-            placeholder="自由記述（任意）"
+            value={topics}
+            onChange={(e) => setTopics(e.target.value)}
+            placeholder="例: 宿題のあと自分からお友達に声をかけていました"
+          />
+        </div>
+
+        {/* 特記事項（紙フォーム準拠） */}
+        <div>
+          <label className="text-[14px] font-medium text-foreground mb-1 block">
+            特記事項
+          </label>
+          <p className="text-[12px] text-sub mb-1.5">
+            異常事態・重要な気づき・連絡事項
+          </p>
+          <Textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="例: 午後から熱っぽさあり、保護者へ連絡予定"
           />
         </div>
 

@@ -17,6 +17,17 @@
 
 ## [Unreleased]
 
+### Changed (Phase B2: フリー記述欄を紙フォーム準拠で分離)
+- `daily_records` テーブルに `topics`（活動中のトピックス）と `notes`（特記事項）カラムを追加（マイグレーション 009）
+- 記録入力画面の「メモ」欄を「活動中のトピックス」「特記事項」の2つの独立した欄に分離
+- 履歴画面・サービス提供記録帳票出力を新フォーマットで表示するよう更新
+- AI記録生成プロンプトを新フォーマット（topics/notes）に対応。旧 memo はフォールバックとして後方互換サポート
+- 旧 `memo` カラムは残置（コメントで廃止予定を明記）。新規保存時は `memo = null` でクリア
+
+### Migration notes
+- `daily_records.activities text[]` は Phase B3 で新マスタへ切替予定、現時点では未変更
+- 既存記録（v1.0.0 まで）の `memo` 内容は記録編集時に `notes` へ自動移行表示され、保存で新フォーマット化される
+
 ### Added (Phase B1: 活動マスタ化)
 - `activity_items` テーブルを新設（施設ごとの活動項目マスタ、`has_detail_field` フラグ、論理削除対応）
 - `daily_record_activities` 連結テーブルを新設（日次記録と活動項目のN:N連結、詳細記入内容を格納）

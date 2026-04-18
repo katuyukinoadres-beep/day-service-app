@@ -7,7 +7,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "API key not configured" }, { status: 500 });
   }
 
-  const { childName, birthDate, school, grade, mood, activities, phrases, memo } = await request.json();
+  const { childName, birthDate, school, grade, mood, activities, phrases, topics, notes, memo } = await request.json();
+
+  // 後方互換: topics/notes が未指定の場合は memo をフォールバックとして扱う
+  const topicsText = topics || "";
+  const notesText = notes || memo || "";
 
   const moodText = mood === "good" ? "良好" : mood === "neutral" ? "普通" : mood === "bad" ? "不調" : "未選択";
 
@@ -40,9 +44,10 @@ export async function POST(request: NextRequest) {
 - 提供された記録フレーズすべてに満遍なく触れること。特定の領域だけに偏らないようにする
 - 記録フレーズの内容を文章の骨格として使い、自然な流れでつなげる
 
-スタッフメモの扱い：
-- スタッフメモは補足情報として扱う。メモの内容が文章全体を支配しないようにする
-- 記録フレーズの内容を主軸にし、メモは背景情報や補足的なエピソードとして自然に織り込む程度にとどめる
+「活動中のトピックス」と「特記事項」の扱い：
+- 活動中のトピックスは補足情報として扱う。記録フレーズの内容を主軸にし、トピックスは背景情報や補足的なエピソードとして自然に織り込む程度にとどめる
+- 特記事項は異常事態や重要な気づきを含むため、該当がある場合は適切に取り上げる。ただし、医療的判断や保護者への過度な不安を煽る表現は避ける
+- 両フィールドが空の場合は、記録フレーズと活動内容のみで文章を組み立てる
 
 良い例：
 「本日は工作活動でペットボトルロケットの制作に取り組みました。太郎さんは設計図を描く段階からとても意欲的で、羽の角度を何度も調整しながら丁寧に仕上げていました。完成したロケットを飛ばした際にはとても嬉しそうな表情を見せてくれました。集中して最後まで取り組む姿に成長を感じます。」`;
@@ -56,7 +61,8 @@ export async function POST(request: NextRequest) {
 本日の気分：${moodText}
 活動内容：${activities?.length > 0 ? activities.join("、") : "未選択"}
 記録フレーズ：${phrases?.length > 0 ? phrases.join("。") : "なし"}
-スタッフメモ：${memo || "なし"}`;
+活動中のトピックス：${topicsText || "なし"}
+特記事項：${notesText || "なし"}`;
 
   try {
     const client = new Anthropic({ apiKey });
