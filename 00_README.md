@@ -13,6 +13,7 @@
 | AI | Anthropic Claude API（支援記録生成） |
 | ホスティング | Vercel |
 | ステータス | 開発中 |
+| バージョン | v1.0.0（[CHANGELOG.md](CHANGELOG.md) 参照） |
 
 ## クイックスタート
 
