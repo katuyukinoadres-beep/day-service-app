@@ -163,6 +163,63 @@ export type Database = {
         };
         Relationships: [];
       };
+      activity_items: {
+        Row: {
+          id: string;
+          facility_id: string;
+          name: string;
+          sort_order: number;
+          has_detail_field: boolean;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          facility_id: string;
+          name: string;
+          sort_order?: number;
+          has_detail_field?: boolean;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          facility_id?: string;
+          name?: string;
+          sort_order?: number;
+          has_detail_field?: boolean;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      daily_record_activities: {
+        Row: {
+          id: string;
+          daily_record_id: string;
+          activity_item_id: string;
+          detail: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          daily_record_id: string;
+          activity_item_id: string;
+          detail?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          daily_record_id?: string;
+          activity_item_id?: string;
+          detail?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       daily_records: {
         Row: {
           id: string;
@@ -249,3 +306,9 @@ export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Attendance = Database["public"]["Tables"]["attendances"]["Row"];
 
 export type AdminStats = Database["public"]["Functions"]["get_admin_stats"]["Returns"];
+
+export type ActivityItem = Database["public"]["Tables"]["activity_items"]["Row"];
+export type ActivityItemInsert = Database["public"]["Tables"]["activity_items"]["Insert"];
+export type ActivityItemUpdate = Database["public"]["Tables"]["activity_items"]["Update"];
+export type DailyRecordActivity = Database["public"]["Tables"]["daily_record_activities"]["Row"];
+export type DailyRecordActivityInsert = Database["public"]["Tables"]["daily_record_activities"]["Insert"];

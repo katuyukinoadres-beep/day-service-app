@@ -80,6 +80,23 @@ export default function SettingsPage() {
 
             {isAdmin && (
               <>
+                <Link href="/settings/activities">
+                  <Card className="flex items-center gap-3 active:bg-gray-50 transition-colors">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#EA580C] text-white text-[18px] shrink-0">
+                      📝
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[15px] font-medium text-foreground">
+                        活動マスタ管理
+                      </p>
+                      <p className="text-[13px] text-sub">
+                        施設固有の活動項目を追加・編集・廃止
+                      </p>
+                    </div>
+                    <ChevronIcon />
+                  </Card>
+                </Link>
+
                 <Link href="/settings/staff">
                   <Card className="flex items-center gap-3 active:bg-gray-50 transition-colors">
                     <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#3B82F6] text-white text-[18px] shrink-0">

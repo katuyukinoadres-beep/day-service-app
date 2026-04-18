@@ -17,6 +17,20 @@
 
 ## [Unreleased]
 
+### Added (Phase B1: 活動マスタ化)
+- `activity_items` テーブルを新設（施設ごとの活動項目マスタ、`has_detail_field` フラグ、論理削除対応）
+- `daily_record_activities` 連結テーブルを新設（日次記録と活動項目のN:N連結、詳細記入内容を格納）
+- マイグレーション `008_activity_items_tables.sql` を追加（両テーブル + RLS ポリシー）
+- `packages/shared/src/types/database.ts` に `ActivityItem` / `DailyRecordActivity` 型を追加
+- 設定画面に「活動マスタ管理」メニューを追加（admin のみ表示、`SET-005`）
+- `/settings/activities` ページ: 有効・廃止済みリスト表示
+- `/settings/activities/new` ページ: 新規追加フォーム（名称、表示順、詳細記入欄フラグ）
+- `/settings/activities/[activityId]` ページ: 編集 + 廃止・復元（物理削除は不可、過去記録の整合性保持）
+
+### Note
+- 既存の `daily_records.activities text[]` カラムは後方互換のため残置。新規記録入力UI は後続PR（Phase B3）で新マスタを使うよう切替予定。
+- 上田くん施設の初期活動項目（眼球運動・宿題・漢字トレーニング等）は本PRでは自動投入しない。デプロイ後、admin がUI経由で登録するか、SQL エディタ経由でシードを実行する運用。
+
 ### Changed (spec-reset)
 - **NiKo ビジョン整合のため仕様書群を全面改訂**。2026-04-18 受領の「放デイ業務改善プロジェクト NiKo→Leon 引き渡しパッケージ」に基づき、Phase 1.1 の実証施設（上田くん運営、株式会社ピース）の要件を docs に反映
 - `docs/01_requirements.md`:
