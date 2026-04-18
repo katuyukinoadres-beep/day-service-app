@@ -17,6 +17,12 @@
 
 ## [Unreleased]
 
+### Changed (日報まるごとコピーに担当者名追加)
+- `buildRitalicoDailyReport` 出力の【サービス提供時間】と【気分】の間に【担当者】行を挿入
+- 担当者名は現在ログイン中ユーザーの `profiles.display_name` から取得（`useProfile` hook使用）
+- リタリコへの転記で担当者情報が欠けていた問題を解消
+- monorepo 全 `package.json` を `1.1.0-dev.10` に bump
+
 ### Added (Phase B8a フォローアップ: 退職時の強制ログアウト)
 - ミドルウェア `packages/shared/src/supabase/middleware.ts` を拡張
   - 認証済みリクエスト時に `profiles.is_active` を確認、`false` なら `supabase.auth.signOut()` 実行して `/login?reason=deactivated` にリダイレクト
