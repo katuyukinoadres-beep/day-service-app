@@ -17,6 +17,15 @@
 
 ## [Unreleased]
 
+### Added (オフライン対応の基盤 — Phase B7 Slice 1)
+- **Service Worker** `apps/main/public/sw.js` を追加し、初回アクセス後はアプリシェル（ホーム・オフラインページ・アイコン・manifest）を precache。ナビゲーションは network-first で動作し、失敗時はキャッシュ経由 → 最終フォールバックとして `/offline` ページを表示
+- 静的アセット（`/_next/static/`、画像、CSS、JS、フォント）は cache-first で通信量を削減
+- `/api/*` は intercept 対象外（後続 Slice で IndexedDB キュー経由のオフライン書き込みを実装予定）
+- `/offline` ページを新設（ネットワーク未接続時の案内 + 再読み込みボタン）。共有 middleware で `/offline` を未認証でも閲覧可能に
+- `<OfflineBanner />` を `(main)` layout に組込: `navigator.onLine` + `online/offline` イベントを監視し、切断時は画面上部に amber バナーを表示
+- `<ServiceWorkerRegister />` を root layout に組込: 本番ビルドのみ `/sw.js` を自動登録。新バージョン検知時は `skipWaiting()` で即時反映
+- monorepo 全 `package.json` を `1.1.0-dev.19` に bump
+
 ### Added (事業所長ダッシュボード `apps/facility-admin` 新設 — Phase B4-B5 Slice 1)
 - モノレポに 3 つ目のアプリ `apps/facility-admin` を追加。事業所長（上田くん級）向けの可視化・意思決定ダッシュボード
 - 認証: Supabase Auth（メール + パスワード）。`profiles.role = 'admin'` のアカウントのみアクセス可能。staff ロールは `/forbidden` ページへリダイレクト

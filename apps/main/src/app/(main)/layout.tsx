@@ -1,4 +1,5 @@
 import { BottomNav } from "@/components/BottomNav";
+import { OfflineBanner } from "@/components/OfflineBanner";
 
 export default function MainLayout({
   children,
@@ -7,6 +8,7 @@ export default function MainLayout({
 }) {
   return (
     <div className="min-h-dvh pb-16">
+      <OfflineBanner />
       {children}
       <BottomNav />
     </div>

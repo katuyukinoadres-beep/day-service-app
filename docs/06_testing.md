@@ -239,6 +239,22 @@ npx vercel --prod --yes
 | DOC-019 | 児童×期間データ出力 印刷 | 「印刷 / PDF保存」ボタンタップ | A4 縦で整形。ヘッダーに施設名・期間・利用者情報 | P1 |
 | DOC-020 | 児童×期間データ出力 CSV | 「CSV ダウンロード」ボタンタップ | `{児童名}_{from}_{to}.csv` がダウンロードされ、Excel で開いて文字化けしない。ヘッダー行 + 日付昇順の明細行 | P1 |
 
+### 3.X オフライン対応 (`OFF`) -- Phase B7 Slice 1 追加
+
+Service Worker と `/offline` ページの動作確認。
+
+| ID | テスト項目 | 操作手順 | 期待結果 | 優先度 |
+|----|-----------|---------|---------|--------|
+| OFF-001 | SW 登録 | 本番環境で初回アクセス → DevTools Application → Service Workers | `/sw.js` が registered / activated 状態 | P1 |
+| OFF-002 | アプリシェル precache | SW activated 後、DevTools Application → Cache Storage | `patto-v1.1.0-dev.19` に `/` `/offline` `/manifest.json` `/icons/icon-192.svg` `/icons/icon-512.svg` がキャッシュ済み | P1 |
+| OFF-003 | オフライン バナー | 通信 OFF（DevTools Network オフ or 機内モード） | 画面上部に amber の「⚠ オフライン中」バナーが即時表示 | P1 |
+| OFF-004 | オフライン時の再開 | バナー表示状態で Network ON に戻す | バナーが自動的に消える | P1 |
+| OFF-005 | オフライン時の既訪問ページ | 既に訪問済みのページを通信 OFF でリロード | キャッシュから同じページが表示される | P1 |
+| OFF-006 | オフライン時の未訪問ページ | 未訪問のページに通信 OFF で遷移 | `/offline` フォールバックページが表示、再読み込みボタンあり | P1 |
+| OFF-007 | `/offline` 未認証アクセス | ログアウト後に `/offline` を直接開く | 認証にリダイレクトされず `/offline` がそのまま表示される | P2 |
+| OFF-008 | 新 SW バージョン反映 | デプロイ後に既存タブで操作 | 新 SW install → skipWaiting → 次リロードで最新バンドルに切替 | P2 |
+| OFF-009 | API 通信は intercept しない | オフライン時に記録保存ボタンをタップ | 保存 API は普通に失敗（Slice 2 で IndexedDB キュー化予定） | P2 |
+
 ### 3.7 フレーズ管理 (`PHR`) -- テスト数: 5件
 
 フレーズの一覧表示・CRUD テスト。
