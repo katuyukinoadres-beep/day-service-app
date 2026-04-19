@@ -30,6 +30,11 @@ interface SpeechRecognitionLike {
   onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
   onend: (() => void) | null;
   onstart: (() => void) | null;
+  onaudiostart?: (() => void) | null;
+  onaudioend?: (() => void) | null;
+  onspeechstart?: (() => void) | null;
+  onspeechend?: (() => void) | null;
+  onnomatch?: (() => void) | null;
 }
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
@@ -45,6 +50,13 @@ function getSpeechRecognition(): SpeechRecognitionCtor | null {
   return window.SpeechRecognition ?? window.webkitSpeechRecognition ?? null;
 }
 
+// Expose diagnostic log to the UI so users without DevTools can share it
+interface DiagEntry {
+  t: number;
+  ev: string;
+  detail?: string;
+}
+
 interface VoiceInputButtonProps {
   onAppend: (text: string) => void;
   label?: string;
@@ -56,9 +68,11 @@ export function VoiceInputButton({
 }: VoiceInputButtonProps) {
   const [listening, setListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
-  // Keep latest onAppend so the single persistent recognition instance always
-  // calls the current prop, not the one captured at mount time.
+  const [diagOpen, setDiagOpen] = useState(false);
+  const [diagLog, setDiagLog] = useState<DiagEntry[]>([]);
+  const attemptRef = useRef(0);
+  const startedAtRef = useRef<number>(0);
+
   const onAppendRef = useRef(onAppend);
   useEffect(() => {
     onAppendRef.current = onAppend;
@@ -70,21 +84,93 @@ export function VoiceInputButton({
     () => false
   );
 
-  // Create ONE SpeechRecognition instance and reuse it. Chrome's Web Speech
-  // API fails silently on subsequent uses when a fresh instance is created
-  // per start; reusing a single instance is the reliable pattern.
-  useEffect(() => {
+  const log = (ev: string, detail?: string) => {
+    const entry = { t: Date.now(), ev, detail };
+    // Keep last 40 entries
+    setDiagLog((prev) => [...prev.slice(-39), entry]);
+    // Also emit to console for DevTools users
+    if (typeof console !== "undefined") {
+      console.info(`[VoiceInput] ${ev}`, detail ?? "");
+    }
+  };
+
+  // Strategy: create a fresh SpeechRecognition instance PER start call.
+  // Both "new-per-start" and "single-persistent" approaches have been
+  // reported to fail silently on Chrome for 2nd+ uses, so we add:
+  //  - Explicit abort of any previous instance before creating new
+  //  - Microphone permission probe BEFORE start
+  //  - Full event logging (audiostart/speechstart/audioend/end/error/nomatch)
+  //  - A watchdog that fires after 3s with no audiostart — surfaces silent failures
+  const currentRecRef = useRef<SpeechRecognitionLike | null>(null);
+  const watchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearWatchdog = () => {
+    if (watchdogRef.current) {
+      clearTimeout(watchdogRef.current);
+      watchdogRef.current = null;
+    }
+  };
+
+  const start = async () => {
     const Ctor = getSpeechRecognition();
-    if (!Ctor) return;
+    if (!Ctor) {
+      setError("このブラウザは音声入力に対応していません");
+      return;
+    }
+    setError(null);
+    attemptRef.current += 1;
+    const attempt = attemptRef.current;
+    log("start-invoked", `attempt=${attempt}`);
+
+    // Probe mic permission (informational, does not block)
+    if (typeof navigator !== "undefined" && "permissions" in navigator) {
+      try {
+        const p = await (
+          navigator.permissions as unknown as {
+            query: (arg: { name: string }) => Promise<{ state: string }>;
+          }
+        ).query({ name: "microphone" });
+        log("perm-state", p.state);
+      } catch (e) {
+        log("perm-probe-failed", String(e));
+      }
+    }
+
+    // Abort any previous instance before creating new
+    if (currentRecRef.current) {
+      log("aborting-previous", "releasing old instance");
+      try {
+        currentRecRef.current.abort();
+      } catch (e) {
+        log("abort-threw", String(e));
+      }
+      currentRecRef.current = null;
+    }
 
     const rec = new Ctor();
     rec.lang = "ja-JP";
     rec.continuous = false;
     rec.interimResults = false;
+    currentRecRef.current = rec;
+    startedAtRef.current = Date.now();
 
-    rec.onstart = () => setListening(true);
-    rec.onend = () => setListening(false);
+    rec.onstart = () => {
+      log("onstart", `attempt=${attempt}`);
+      setListening(true);
+    };
+    rec.onaudiostart = () => log("onaudiostart");
+    rec.onspeechstart = () => log("onspeechstart");
+    rec.onspeechend = () => log("onspeechend");
+    rec.onaudioend = () => log("onaudioend");
+    rec.onnomatch = () => log("onnomatch");
+    rec.onend = () => {
+      log("onend", `elapsed=${Date.now() - startedAtRef.current}ms`);
+      setListening(false);
+      clearWatchdog();
+      if (currentRecRef.current === rec) currentRecRef.current = null;
+    };
     rec.onerror = (ev) => {
+      log("onerror", `${ev.error}${ev.message ? " / " + ev.message : ""}`);
       const msg =
         ev.error === "not-allowed" || ev.error === "service-not-allowed"
           ? "マイクの使用が許可されていません（ブラウザ設定を確認）"
@@ -95,6 +181,7 @@ export function VoiceInputButton({
               : `音声入力エラー: ${ev.error}`;
       if (msg) setError(msg);
       setListening(false);
+      clearWatchdog();
     };
     rec.onresult = (ev) => {
       let transcript = "";
@@ -108,55 +195,50 @@ export function VoiceInputButton({
           transcript += r[0].transcript;
         }
       }
+      log("onresult", `transcript="${transcript.slice(0, 40)}"`);
       if (transcript) onAppendRef.current(transcript);
     };
 
-    recognitionRef.current = rec;
+    try {
+      rec.start();
+      log("rec.start-returned", "no throw");
+    } catch (err) {
+      log("rec.start-threw", err instanceof Error ? err.message : String(err));
+      setError(
+        `音声入力を開始できませんでした: ${err instanceof Error ? err.message : "unknown"}`
+      );
+      setListening(false);
+      return;
+    }
 
-    return () => {
+    // Watchdog: if onaudiostart never fires within 3s, surface silent failure
+    clearWatchdog();
+    watchdogRef.current = setTimeout(() => {
+      log("watchdog-timeout", "no audiostart within 3s → likely silent failure");
+      setError(
+        "音声入力が始まりません。ブラウザのマイク権限を確認するか、診断ログを開いて状況を共有してください。"
+      );
       try {
         rec.abort();
       } catch {
         // ignore
       }
-      recognitionRef.current = null;
-    };
-  }, []);
-
-  const start = () => {
-    const rec = recognitionRef.current;
-    if (!rec) {
-      setError("このブラウザは音声入力に対応していません");
-      return;
-    }
-    setError(null);
-    try {
-      rec.start();
-    } catch (err) {
-      // InvalidStateError fires when start() is called on an already-running
-      // recognition. Abort and retry once on next tick.
-      try {
-        rec.abort();
-        setTimeout(() => {
-          try {
-            rec.start();
-          } catch (err2) {
-            setError(
-              `音声入力を開始できませんでした: ${err2 instanceof Error ? err2.message : "unknown"}`
-            );
-          }
-        }, 50);
-      } catch {
-        setError(
-          `音声入力を開始できませんでした: ${err instanceof Error ? err.message : "unknown"}`
-        );
-      }
-    }
+      setListening(false);
+    }, 3000);
   };
 
   const stop = () => {
-    recognitionRef.current?.stop();
+    log("stop-invoked");
+    currentRecRef.current?.stop();
   };
+
+  useEffect(() => {
+    return () => {
+      clearWatchdog();
+      currentRecRef.current?.abort();
+      currentRecRef.current = null;
+    };
+  }, []);
 
   if (!supported) {
     return null;
@@ -191,6 +273,28 @@ export function VoiceInputButton({
       </button>
       {error && (
         <span className="ml-2 text-[11px] text-red-600">{error}</span>
+      )}
+      <button
+        type="button"
+        onClick={() => setDiagOpen((v) => !v)}
+        className="ml-1 text-[10px] text-gray-400 underline"
+        aria-label="音声入力 診断ログを開閉"
+      >
+        {diagOpen ? "診断を閉じる" : "診断"}
+      </button>
+      {diagOpen && (
+        <div className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 p-2 text-[11px] font-mono text-gray-700 max-h-40 overflow-auto">
+          {diagLog.length === 0 ? (
+            <p className="text-gray-400">(まだログなし — マイクボタンを押してみてください)</p>
+          ) : (
+            diagLog.map((e, i) => (
+              <p key={i}>
+                +{e.t - (diagLog[0]?.t ?? e.t)}ms {e.ev}
+                {e.detail ? `: ${e.detail}` : ""}
+              </p>
+            ))
+          )}
+        </div>
       )}
     </>
   );
