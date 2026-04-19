@@ -5,6 +5,14 @@ import Link from "next/link";
 import { createClient } from "@patto/shared/supabase/client";
 import { Card } from "@/components/ui/Card";
 import type { Child, DailyRecord } from "@patto/shared/types";
+import {
+  formatActivitySelections,
+  type DailyRecordActivityJoin,
+} from "@patto/shared";
+
+type HomeRecord = DailyRecord & {
+  daily_record_activities: DailyRecordActivityJoin[] | null;
+};
 
 function getToday(): string {
   const d = new Date();
@@ -13,7 +21,7 @@ function getToday(): string {
 
 export default function HomePage() {
   const [children, setChildren] = useState<Child[]>([]);
-  const [records, setRecords] = useState<DailyRecord[]>([]);
+  const [records, setRecords] = useState<HomeRecord[]>([]);
   const [paperMode, setPaperMode] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -37,13 +45,15 @@ export default function HomePage() {
           .order("name_kana", { ascending: true }),
         supabase
           .from("daily_records")
-          .select("*")
+          .select(
+            "*, daily_record_activities(detail, activity_items(id, name, sort_order))",
+          )
           .eq("date", today),
         supabase.auth.getUser(),
       ]);
 
       setChildren((childrenRes.data as Child[]) ?? []);
-      setRecords((recordsRes.data as DailyRecord[]) ?? []);
+      setRecords((recordsRes.data as HomeRecord[]) ?? []);
 
       const userId = userRes.data.user?.id;
       if (userId) {
@@ -211,7 +221,11 @@ export default function HomePage() {
                           ) : (
                             <p className="text-[13px] text-sub truncate">
                               {moodEmoji}{" "}
-                              {record?.activities.slice(0, 3).join("・")}
+                              {formatActivitySelections(
+                                record?.daily_record_activities,
+                              )
+                                .slice(0, 3)
+                                .join("・")}
                             </p>
                           )}
                         </div>

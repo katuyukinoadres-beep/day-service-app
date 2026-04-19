@@ -5,6 +5,14 @@ import { createClient } from "@patto/shared/supabase/client";
 import { Header } from "@/components/ui/Header";
 import { Button } from "@/components/ui/Button";
 import type { Child, DailyRecord, Profile } from "@patto/shared/types";
+import {
+  formatActivitySelections,
+  type DailyRecordActivityJoin,
+} from "@patto/shared";
+
+type ServiceRecord = DailyRecord & {
+  daily_record_activities: DailyRecordActivityJoin[] | null;
+};
 
 function getToday(): string {
   const d = new Date();
@@ -40,7 +48,7 @@ export default function ServiceRecordPage() {
   const [date, setDate] = useState(getToday());
   const [children, setChildren] = useState<Child[]>([]);
   const [selectedChildId, setSelectedChildId] = useState("");
-  const [record, setRecord] = useState<DailyRecord | null>(null);
+  const [record, setRecord] = useState<ServiceRecord | null>(null);
   const [facilityName, setFacilityName] = useState("");
   const [recorder, setRecorder] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -77,12 +85,14 @@ export default function ServiceRecordPage() {
       const supabase = createClient();
       const { data } = await supabase
         .from("daily_records")
-        .select("*")
+        .select(
+          "*, daily_record_activities(detail, activity_items(id, name, sort_order))",
+        )
         .eq("date", date)
         .eq("child_id", selectedChildId)
         .maybeSingle();
 
-      const rec = data as DailyRecord | null;
+      const rec = data as ServiceRecord | null;
       setRecord(rec);
 
       if (rec?.recorded_by) {
@@ -283,9 +293,12 @@ export default function ServiceRecordPage() {
                       活動内容
                     </th>
                     <td className="px-3 py-2">
-                      {currentRecord.activities.length > 0
-                        ? currentRecord.activities.join("・")
-                        : "—"}
+                      {(() => {
+                        const lines = formatActivitySelections(
+                          currentRecord.daily_record_activities,
+                        );
+                        return lines.length > 0 ? lines.join("・") : "—";
+                      })()}
                     </td>
                   </tr>
                   {/* 記録フレーズ・活動中のトピックスは AI への入力ヒントであり最終出力（国保連エビデンス）には含めない */}

@@ -47,7 +47,9 @@ export async function GET(request: NextRequest) {
     case "recent-records": {
       const { data } = await supabase
         .from("daily_records")
-        .select("*")
+        .select(
+          "*, daily_record_activities(detail, activity_items(id, name, sort_order))",
+        )
         .order("created_at", { ascending: false })
         .limit(10);
       return NextResponse.json(data ?? []);
@@ -117,7 +119,9 @@ export async function GET(request: NextRequest) {
       if (!facilityId) return NextResponse.json([]);
       const { data } = await supabase
         .from("daily_records")
-        .select("*")
+        .select(
+          "*, daily_record_activities(detail, activity_items(id, name, sort_order))",
+        )
         .eq("facility_id", facilityId)
         .order("date", { ascending: false })
         .limit(50);

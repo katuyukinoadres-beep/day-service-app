@@ -2,11 +2,19 @@
 
 import { useEffect, useState } from "react";
 import type { AdminStats, DailyRecord } from "@patto/shared/types";
+import {
+  formatActivitySelections,
+  type DailyRecordActivityJoin,
+} from "@patto/shared";
 import { StatsCard } from "@/components/ui/StatsCard";
+
+type DashboardRecord = DailyRecord & {
+  daily_record_activities: DailyRecordActivityJoin[] | null;
+};
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
-  const [recentRecords, setRecentRecords] = useState<DailyRecord[]>([]);
+  const [recentRecords, setRecentRecords] = useState<DashboardRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -78,7 +86,10 @@ export default function DashboardPage() {
                   <tr key={record.id} className="hover:bg-gray-50">
                     <td className="whitespace-nowrap px-4 py-4 text-sm text-sub md:px-6">{record.date}</td>
                     <td className="whitespace-nowrap px-4 py-4 text-sm text-sub md:px-6">{moodLabel(record.mood)}</td>
-                    <td className="px-4 py-4 text-sm text-sub md:px-6">{record.activities.length > 0 ? record.activities.join(", ") : "—"}</td>
+                    <td className="px-4 py-4 text-sm text-sub md:px-6">{(() => {
+                      const lines = formatActivitySelections(record.daily_record_activities);
+                      return lines.length > 0 ? lines.join(", ") : "—";
+                    })()}</td>
                     <td className="whitespace-nowrap px-4 py-4 text-sm text-sub md:px-6">{new Date(record.created_at).toLocaleString("ja-JP")}</td>
                   </tr>
                 ))

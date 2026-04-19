@@ -5,11 +5,19 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@patto/shared/supabase/client";
 import type { DailyRecord } from "@patto/shared/types";
+import {
+  formatActivitySelections,
+  type DailyRecordActivityJoin,
+} from "@patto/shared";
+
+type FacilityRecord = DailyRecord & {
+  daily_record_activities: DailyRecordActivityJoin[] | null;
+};
 
 export default function FacilityRecordsPage() {
   const params = useParams();
   const facilityId = params.facilityId as string;
-  const [records, setRecords] = useState<DailyRecord[]>([]);
+  const [records, setRecords] = useState<FacilityRecord[]>([]);
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [loading, setLoading] = useState(true);
 
@@ -19,12 +27,14 @@ export default function FacilityRecordsPage() {
       const supabase = createClient();
       const { data } = await supabase
         .from("daily_records")
-        .select("*")
+        .select(
+          "*, daily_record_activities(detail, activity_items(id, name, sort_order))",
+        )
         .eq("facility_id", facilityId)
         .eq("date", date)
         .order("created_at", { ascending: false });
 
-      if (data) setRecords(data);
+      if (data) setRecords(data as FacilityRecord[]);
       setLoading(false);
     };
 
@@ -150,9 +160,12 @@ export default function FacilityRecordsPage() {
                       {moodLabel(record.mood)}
                     </td>
                     <td className="px-6 py-4 text-sm text-sub">
-                      {record.activities.length > 0
-                        ? record.activities.join(", ")
-                        : "—"}
+                      {(() => {
+                        const lines = formatActivitySelections(
+                          record.daily_record_activities,
+                        );
+                        return lines.length > 0 ? lines.join(", ") : "—";
+                      })()}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-sub">
                       {record.arrival_time || "—"}

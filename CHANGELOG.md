@@ -17,6 +17,14 @@
 
 ## [Unreleased]
 
+### Changed (履歴・帳票を `daily_record_activities` 正規化テーブル経由の読み出しへ移行)
+- 履歴画面 / サービス提供記録帳票 / 業務日誌 / ホーム画面（先頭3件）/ Admin C層のダッシュボード・施設別記録一覧 の活動内容表示を、legacy `daily_records.activities text[]` から `daily_record_activities → activity_items` の join 読み出しへ切替
+- 活動名は `activity_items.name` 現値を表示（マスタ改名が履歴に即反映）。`sort_order` で並び順を正規化
+- 詳細欄（`daily_record_activities.detail`）は `名（詳細）` 形式でレンダリング
+- 共通 formatter `formatActivitySelections` を `@patto/shared` に新設、主要 6 箇所で再利用
+- 記録保存側は引き続き legacy `activities` カラムへの書き込みを並行継続（読み出しが全面切替できたら後続で書き込み停止 → カラム drop を検討）
+- monorepo 全 `package.json` を `1.1.0-dev.16` に bump
+
 ### Changed (音声入力を continuous モード + 自動再開)
 - `continuous: true` に変更。短い無音で勝手に終わらず、ユーザーがタップで停止するまで録音継続
 - Chrome が continuous でも内部都合で onend を出すケースに備え、`keepAlive` フラグで自動再開
