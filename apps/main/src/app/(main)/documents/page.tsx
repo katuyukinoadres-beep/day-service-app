@@ -39,6 +39,13 @@ const items = [
     label: "月次出席サマリー",
     desc: "月間の出席一覧表",
   },
+  {
+    href: "/documents/child-period-report",
+    icon: "📅",
+    bg: "bg-[#10B981]",
+    label: "児童×期間データ出力",
+    desc: "児童ごとに期間指定で記録をまとめて出力（印刷・CSV）",
+  },
 ];
 
 export default function DocumentsPage() {
