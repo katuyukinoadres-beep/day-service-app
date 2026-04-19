@@ -6,6 +6,14 @@ import { Header } from "@/components/ui/Header";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import type { Child, DailyRecord } from "@patto/shared/types";
+import {
+  formatActivitySelections,
+  type DailyRecordActivityJoin,
+} from "@patto/shared";
+
+type HistoryRecord = DailyRecord & {
+  daily_record_activities: DailyRecordActivityJoin[] | null;
+};
 
 function getToday(): string {
   const d = new Date();
@@ -13,7 +21,7 @@ function getToday(): string {
 }
 
 export default function HistoryPage() {
-  const [records, setRecords] = useState<(DailyRecord & { child?: Child })[]>([]);
+  const [records, setRecords] = useState<(HistoryRecord & { child?: Child })[]>([]);
   const [children, setChildren] = useState<Child[]>([]);
   const [date, setDate] = useState(getToday());
   const [childFilter, setChildFilter] = useState("");
@@ -25,7 +33,9 @@ export default function HistoryPage() {
 
     let query = supabase
       .from("daily_records")
-      .select("*")
+      .select(
+        "*, daily_record_activities(detail, activity_items(id, name, sort_order))",
+      )
       .eq("date", date)
       .order("created_at", { ascending: false });
 
@@ -42,7 +52,7 @@ export default function HistoryPage() {
     ]);
 
     const childrenData = (childrenRes.data as Child[]) ?? [];
-    const recordsData = (recordsRes.data as DailyRecord[]) ?? [];
+    const recordsData = (recordsRes.data as HistoryRecord[]) ?? [];
     const childMap = new Map(
       childrenData.map((c) => [c.id, c])
     );
@@ -153,12 +163,17 @@ export default function HistoryPage() {
                     <span className="text-sub">気分: </span>
                     {moodLabel(record.mood)}
                   </p>
-                  {record.activities.length > 0 && (
-                    <p>
-                      <span className="text-sub">活動: </span>
-                      {record.activities.join("・")}
-                    </p>
-                  )}
+                  {(() => {
+                    const activityLines = formatActivitySelections(
+                      record.daily_record_activities,
+                    );
+                    return activityLines.length > 0 ? (
+                      <p>
+                        <span className="text-sub">活動: </span>
+                        {activityLines.join("・")}
+                      </p>
+                    ) : null;
+                  })()}
                   {/* 記録フレーズ・活動中のトピックスは AI への入力ヒントであり最終出力には含めない */}
                   {record.notes && (
                     <p>

@@ -502,6 +502,11 @@ CREATE POLICY "Users can view phrases"
 |--------|---------|
 | `activities text[]` | 新テーブル `daily_record_activities` に置換 |
 
+**廃止への移行状況（v1.1.0-dev.16）**:
+- 書き込み側: 保存時に `daily_record_activities` と legacy `activities text[]` の双方へ並行書き込み中（橋渡し期）
+- 読み出し側: 履歴 / サービス提供記録帳票 / 業務日誌 / ホーム / Admin ダッシュボード / Admin 施設別記録一覧 を `daily_record_activities → activity_items` の join 読み出しに全面切替済み（共通 formatter `formatActivitySelections` を `@patto/shared` に配置）
+- 残作業: 次フェーズで保存側の legacy 書き込み停止 → 後続マイグレーションで `activities` カラム DROP
+
 **追加するカラム**:
 
 | カラム名 | 型 | 制約 | 説明 |

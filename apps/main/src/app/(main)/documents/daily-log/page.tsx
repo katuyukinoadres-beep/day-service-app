@@ -5,6 +5,14 @@ import { createClient } from "@patto/shared/supabase/client";
 import { Header } from "@/components/ui/Header";
 import { Button } from "@/components/ui/Button";
 import type { Child, DailyRecord, Profile } from "@patto/shared/types";
+import {
+  formatActivitySelections,
+  type DailyRecordActivityJoin,
+} from "@patto/shared";
+
+type DailyLogRecord = DailyRecord & {
+  daily_record_activities: DailyRecordActivityJoin[] | null;
+};
 
 function getToday(): string {
   const d = new Date();
@@ -19,7 +27,7 @@ function formatDate(dateStr: string): string {
 
 export default function DailyLogPage() {
   const [date, setDate] = useState(getToday());
-  const [records, setRecords] = useState<DailyRecord[]>([]);
+  const [records, setRecords] = useState<DailyLogRecord[]>([]);
   const [children, setChildren] = useState<Child[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [facilityName, setFacilityName] = useState("");
@@ -34,7 +42,9 @@ export default function DailyLogPage() {
         await Promise.all([
           supabase
             .from("daily_records")
-            .select("*")
+            .select(
+              "*, daily_record_activities(detail, activity_items(id, name, sort_order))",
+            )
             .eq("date", date)
             .order("created_at", { ascending: true }),
           supabase
@@ -45,7 +55,7 @@ export default function DailyLogPage() {
           supabase.from("profiles").select("*"),
         ]);
 
-      setRecords((recordsRes.data as DailyRecord[]) ?? []);
+      setRecords((recordsRes.data as DailyLogRecord[]) ?? []);
       setChildren((childrenRes.data as Child[]) ?? []);
       setFacilityName(
         (facilityRes.data as { name: string } | null)?.name ?? ""
@@ -134,9 +144,12 @@ export default function DailyLogPage() {
                         {r.departure_time ?? "—"}
                       </td>
                       <td className="px-2 py-2">
-                        {r.activities.length > 0
-                          ? r.activities.join("・")
-                          : "—"}
+                        {(() => {
+                          const lines = formatActivitySelections(
+                            r.daily_record_activities,
+                          );
+                          return lines.length > 0 ? lines.join("・") : "—";
+                        })()}
                       </td>
                       <td className="px-2 py-2">{r.ai_text || "—"}</td>
                       <td className="px-2 py-2 whitespace-nowrap">
