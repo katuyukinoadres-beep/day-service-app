@@ -9,7 +9,7 @@
 | 層 | アプリ | 主な利用者 | 状態 |
 |---|--------|-----------|------|
 | **A** | `apps/main` | 現場スタッフ／保護者 | ✅ 実装済 |
-| **B** | `apps/facility-admin` | 事業所長（上田くん級） | 🔲 Phase 1.2 で追加予定 |
+| **B** | `apps/facility-admin` | 事業所長（上田くん級） | 🟡 Phase B4-B5 Slice 1 実装済（基盤 + リアルタイム業務状況、他機能は Slice 2-5 で順次） |
 | **C** | `apps/admin` | スーパー管理者（Leon／開発側） | ✅ 実装済 |
 
 > ⚠️ `apps/admin` は C（システムAdmin）。B（施設管理者ダッシュボード）とは別物。混同しないこと。
@@ -17,7 +17,7 @@
 ## 構成
 - `apps/main` - A層: ユーザーアプリ（Next.js 16 / React 19）
 - `apps/admin` - C層: システムAdmin管理画面（Next.js 16 / React 19）
-- `apps/facility-admin` - B層: 施設管理者ダッシュボード（🔲 Phase 1.2 で追加予定）
+- `apps/facility-admin` - B層: 施設管理者ダッシュボード（🟡 Phase B4-B5 Slice 1 実装済、port 3002 for dev）
 - `packages/shared` - 共有ライブラリ（型定義、Supabaseクライアント、定数）
 - `docs/` - 設計ドキュメント一式（11ファイル、v1.1.0 spec-reset で全面改訂）
 - `CHANGELOG.md` - 変更履歴（SemVer準拠）
@@ -31,13 +31,16 @@
 
 ## よく使うコマンド
 ```bash
-npm run dev:main          # メインアプリ開発サーバー (port 3000)
-npm run dev:admin         # 管理画面開発サーバー (port 3001)
-npm run build:main        # メインアプリビルド
-npm run build:admin       # 管理画面ビルド
-npm run lint:main         # メインアプリLint
-npm run lint:admin        # 管理画面Lint
-npx vercel --prod --yes   # 本番デプロイ（ルートから実行）
+npm run dev:main              # メインアプリ開発サーバー (port 3000)
+npm run dev:admin             # 管理画面開発サーバー (port 3001)
+npm run dev:facility-admin    # 事業所長ダッシュボード開発サーバー (port 3002)
+npm run build:main            # メインアプリビルド
+npm run build:admin           # 管理画面ビルド
+npm run build:facility-admin  # 事業所長ダッシュボードビルド
+npm run lint:main             # メインアプリLint
+npm run lint:admin            # 管理画面Lint
+npm run lint:facility-admin   # 事業所長ダッシュボードLint
+npx vercel --prod --yes       # 本番デプロイ（ルートから実行、apps/main のみ）
 ```
 
 ## 環境変数

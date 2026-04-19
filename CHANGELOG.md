@@ -17,6 +17,22 @@
 
 ## [Unreleased]
 
+### Added (事業所長ダッシュボード `apps/facility-admin` 新設 — Phase B4-B5 Slice 1)
+- モノレポに 3 つ目のアプリ `apps/facility-admin` を追加。事業所長（上田くん級）向けの可視化・意思決定ダッシュボード
+- 認証: Supabase Auth（メール + パスワード）。`profiles.role = 'admin'` のアカウントのみアクセス可能。staff ロールは `/forbidden` ページへリダイレクト
+- 退職処理済みアカウント（`is_active = false`）は強制ログアウト（`apps/main` と同じ UX）
+- Sidebar 構成: ダッシュボード / 児童分析（準備中）/ スタッフ分析（準備中）/ 請求準備（準備中）/ 経営KPI（準備中）
+- 機能① **リアルタイム業務状況** を Slice 1 で本実装:
+  - 5 つの統計カード（記録済/在籍、未記録、紙記入、AI未生成、稼働スタッフ）
+  - 記録進捗バー（`recordedCount / childrenActiveCount` の % 表示）
+  - 児童別リスト 3 枠（未記録 / 紙記入 / AI未生成）
+  - 「ぱっと記録」本体アプリへの外部リンク
+- RLS 経由で自施設データのみにアクセス（`service_role` キー不使用、C 層 `apps/admin` とは認証方式が根本的に異なる）
+- Vercel 用 `vercel.json` + `public/manifest.json` + アイコン配置。別プロジェクトとしてデプロイ想定
+- root `package.json` に `dev:facility-admin` / `build:facility-admin` / `lint:facility-admin` スクリプト追加
+- 残機能（児童分析・スタッフ分析・請求準備・経営KPI）は Slice 2-5 で順次実装
+- monorepo 全 `package.json` を `1.1.0-dev.18` に bump
+
 ### Added (児童×期間データ出力機能)
 - 新ページ `/documents/child-period-report` を追加
 - 児童 + 開始日 + 終了日を指定して、該当期間の記録をまとめて閲覧・出力できる
