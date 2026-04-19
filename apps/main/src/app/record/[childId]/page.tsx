@@ -120,8 +120,10 @@ export default function RecordPage() {
   const [existingRecord, setExistingRecord] = useState<DailyRecord | null>(null);
   const [allChildren, setAllChildren] = useState<Child[]>([]);
   const [allRecords, setAllRecords] = useState<DailyRecord[]>([]);
+  const [paperMode, setPaperMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [markingPaper, setMarkingPaper] = useState(false);
   const [generating, setGenerating] = useState(false);
 
   const [mood, setMood] = useState<"good" | "neutral" | "bad" | null>(null);
@@ -190,6 +192,19 @@ export default function RecordPage() {
       setPhrases((phrasesRes.data as Phrase[]) ?? []);
       setAllChildren((childrenRes.data as Child[]) ?? []);
       setAllRecords((recordsRes.data as DailyRecord[]) ?? []);
+
+      // 紙併用モード判定: 本児の施設の paper_mode_enabled を引く
+      const childData = childRes.data as Child | null;
+      if (childData) {
+        const { data: facData } = await supabase
+          .from("facilities")
+          .select("paper_mode_enabled")
+          .eq("id", childData.facility_id)
+          .single();
+        const fac = facData as { paper_mode_enabled: boolean } | null;
+        setPaperMode(fac?.paper_mode_enabled ?? false);
+      }
+
       const allTemplates = (templatesRes.data as QuickTemplate[]) ?? [];
       setTopicsTemplates(allTemplates.filter((t) => t.field_type === "topics"));
       setNotesTemplates(allTemplates.filter((t) => t.field_type === "notes"));
@@ -367,6 +382,8 @@ export default function RecordPage() {
       departure_time: departureTime || null,
       pickup_method: pickupMethod || null,
       recorded_by: user.id,
+      // 通常の保存では紙記入フラグは立てない（既に paper_logged の既存行がある場合も通常保存で上書きされる）
+      paper_logged: false,
     };
 
     let savedRecordId: string | null = null;
@@ -417,6 +434,90 @@ export default function RecordPage() {
     router.refresh();
   };
 
+  const handleMarkPaperLogged = async () => {
+    if (!child) return;
+    const ok = window.confirm(
+      "今日は紙で記入したものとして記録済みに含めます。\n（アプリには内容が入らず、日報・帳票にも出ません）\nよろしいですか？"
+    );
+    if (!ok) return;
+
+    setMarkingPaper(true);
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setMarkingPaper(false);
+      return;
+    }
+
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("facility_id")
+      .eq("id", user.id)
+      .single();
+    const profileRow = profileData as { facility_id: string } | null;
+    if (!profileRow) {
+      setMarkingPaper(false);
+      return;
+    }
+
+    const paperRecord = {
+      facility_id: profileRow.facility_id,
+      child_id: childId,
+      date: today,
+      mood: null,
+      activities: [] as string[],
+      phrases: [] as string[],
+      topics: null,
+      notes: null,
+      memo: null,
+      ai_text: null,
+      arrival_time: null,
+      departure_time: null,
+      pickup_method: null,
+      recorded_by: user.id,
+      paper_logged: true,
+    };
+
+    let paperRecordId: string | null = null;
+    if (existingRecord) {
+      const { data: updated } = await supabase
+        .from("daily_records")
+        .update(paperRecord)
+        .eq("id", existingRecord.id)
+        .select("id")
+        .single();
+      paperRecordId = (updated as { id: string } | null)?.id ?? existingRecord.id;
+    } else {
+      const { data: inserted } = await supabase
+        .from("daily_records")
+        .insert(paperRecord)
+        .select("id")
+        .single();
+      paperRecordId = (inserted as { id: string } | null)?.id ?? null;
+    }
+
+    // 紙記入に切替時は既存の活動項目連結行もクリア
+    if (paperRecordId) {
+      await supabase
+        .from("daily_record_activities")
+        .delete()
+        .eq("daily_record_id", paperRecordId);
+    }
+
+    // 次の未記録児童へ自動遷移（通常保存と同挙動）
+    const recordedIds = new Set(allRecords.map((r) => r.child_id));
+    recordedIds.add(childId);
+    const nextChild = allChildren.find((c) => !recordedIds.has(c.id));
+    if (nextChild) {
+      router.replace(`/record/${nextChild.id}`);
+    } else {
+      router.push("/");
+    }
+    router.refresh();
+  };
+
   if (loading || !child) {
     return (
       <div className="flex min-h-dvh items-center justify-center">
@@ -453,11 +554,21 @@ export default function RecordPage() {
           </div>
           {existingRecord && (
             <span className="rounded-full bg-primary-light px-2 py-0.5 text-[12px] text-primary font-medium">
-              編集中
+              {existingRecord.paper_logged ? "紙で記入済み" : "編集中"}
             </span>
           )}
         </div>
       </header>
+
+      {existingRecord?.paper_logged && (
+        <div className="mx-4 mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5">
+          <p className="text-[13px] text-amber-900">
+            <span className="font-semibold">今日は紙で記入済みです</span>
+            <br />
+            このままで OK。アプリにも入力し直す場合は、以下の項目を埋めて「更新する」を押すと通常の記録に切り替わります。
+          </p>
+        </div>
+      )}
 
       <div className="flex flex-col gap-6 px-4 py-4 pb-8">
         {/* 来所時刻 */}
@@ -774,13 +885,29 @@ export default function RecordPage() {
         </div>
 
         {/* 保存 */}
-        <Button onClick={handleSave} fullWidth disabled={saving}>
+        <Button onClick={handleSave} fullWidth disabled={saving || markingPaper}>
           {saving
             ? "保存中..."
             : existingRecord
               ? "更新する"
               : "保存して次へ"}
         </Button>
+
+        {/* 紙併用モード時のみ: 紙で記入したものとしてマーク */}
+        {paperMode && !existingRecord?.paper_logged && (
+          <button
+            type="button"
+            onClick={handleMarkPaperLogged}
+            disabled={markingPaper || saving}
+            className="tap-target w-full rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-[14px] font-medium text-amber-900 transition-colors active:bg-amber-100 disabled:opacity-50"
+          >
+            {markingPaper
+              ? "マーク中..."
+              : existingRecord
+                ? "今日は紙で記入したものに切り替える"
+                : "今日は紙で記入しました（アプリ入力スキップ）"}
+          </button>
+        )}
       </div>
     </div>
   );
