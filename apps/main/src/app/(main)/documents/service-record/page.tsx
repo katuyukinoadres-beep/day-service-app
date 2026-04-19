@@ -167,6 +167,12 @@ export default function ServiceRecordPage() {
           <p className="py-12 text-center text-sub text-[15px]">
             この日の記録はありません
           </p>
+        ) : currentRecord.paper_logged ? (
+          <p className="py-12 text-center text-sub text-[15px]">
+            この日は紙のフォームで記入済みのため、サービス提供記録帳票はありません。
+            <br />
+            帳票が必要な場合は、記録画面で「アプリに入力し直す」を選んで保存してください。
+          </p>
         ) : (
           <div>
             {/* Print-only header */}
