@@ -17,6 +17,15 @@
 
 ## [Unreleased]
 
+### Fixed (音声入力の2回目以降サイレント失敗)
+- `VoiceInputButton` を単一永続 `SpeechRecognition` インスタンス再利用方式に書き換え
+  - 従来は `start()` のたびに `new SpeechRecognition()` を生成していたが、Chrome で2回目以降サイレント失敗する挙動があった
+  - `useEffect` でマウント時に1度だけ生成、アンマウント時に `abort()` で破棄
+  - `onAppend` prop は ref 経由で常に最新を参照
+- `InvalidStateError`（既に実行中に `start()` が呼ばれた場合）は `abort()` → 次 tick で再 `start()` のリトライを追加
+- `aborted` エラーはユーザー向けメッセージから抑制（stop 操作時に発火する正常系）
+- テスト仕様書 `06_testing.md` に REC-020〜022（音声入力の初回/繰り返し/異フィールド連続）を追加
+
 ### Changed (日報まるごとコピーに担当者名追加)
 - `buildRitalicoDailyReport` 出力の【サービス提供時間】と【気分】の間に【担当者】行を挿入
 - 担当者名は現在ログイン中ユーザーの `profiles.display_name` から取得（`useProfile` hook使用）
