@@ -17,6 +17,16 @@
 
 ## [Unreleased]
 
+### Fixed / Diagnostic (音声入力の再発バグ調査版)
+- `VoiceInputButton` に以下を追加して 2回目以降失敗の真因を捕まえる:
+  - **新インスタンス作成 per-start**（以前の persistent instance から再変更）+ **旧インスタンス明示 abort**
+  - Microphone permission 状態の事前 probe
+  - **全 SpeechRecognition イベントを logging**（onstart/onaudiostart/onspeechstart/onspeechend/onaudioend/onresult/onnomatch/onend/onerror）
+  - **3秒ウォッチドッグ**: onaudiostart が来なければサイレント失敗と判定してエラー表示
+  - 画面内「診断」ボタンで直近40イベントのタイムライン表示（ユーザーが DevTools なしで共有できる）
+- 前回の「single persistent instance」方式は 2回目失敗を解消しなかったため per-start 方式へ戻した上で原因究明を優先
+- monorepo 全 `package.json` を `1.1.0-dev.13` に bump
+
 ### Added (Phase B8b 完遂: 紙併用モードの機能実装)
 - **「今日は紙で記入しました」ボタン** を記録入力画面に追加（`paper_mode_enabled=true` の施設のみ表示）
   - タップ → 確認ダイアログ → `daily_records` に空レコード+ `paper_logged=true` で insert（既存の通常記録がある場合は update で上書き）
