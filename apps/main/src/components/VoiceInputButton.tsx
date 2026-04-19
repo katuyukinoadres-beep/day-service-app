@@ -71,7 +71,6 @@ export function VoiceInputButton({
   const [diagOpen, setDiagOpen] = useState(false);
   const [diagLog, setDiagLog] = useState<DiagEntry[]>([]);
   const attemptRef = useRef(0);
-  const startedAtRef = useRef<number>(0);
 
   const onAppendRef = useRef(onAppend);
   useEffect(() => {
@@ -103,6 +102,9 @@ export function VoiceInputButton({
   //  - A watchdog that fires after 3s with no audiostart — surfaces silent failures
   const currentRecRef = useRef<SpeechRecognitionLike | null>(null);
   const watchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // true のとき onend を受けても自動で start し直す。
+  // ユーザーが明示的に停止 or エラーが出たら false にする。
+  const keepAliveRef = useRef(false);
 
   const clearWatchdog = () => {
     if (watchdogRef.current) {
@@ -120,6 +122,7 @@ export function VoiceInputButton({
     setError(null);
     attemptRef.current += 1;
     const attempt = attemptRef.current;
+    keepAliveRef.current = true;
     log("start-invoked", `attempt=${attempt}`);
 
     // Probe mic permission (informational, does not block)
@@ -149,10 +152,12 @@ export function VoiceInputButton({
 
     const rec = new Ctor();
     rec.lang = "ja-JP";
-    rec.continuous = false;
+    // continuous: true → ユーザーが停止ボタンを押すまで録音継続。
+    // 途中の沈黙で勝手に終わらないようにする。各発話の final result ごとに
+    // onAppend が呼ばれて追記される。
+    rec.continuous = true;
     rec.interimResults = false;
     currentRecRef.current = rec;
-    startedAtRef.current = Date.now();
 
     rec.onstart = () => {
       log("onstart", `attempt=${attempt}`);
@@ -170,24 +175,45 @@ export function VoiceInputButton({
     rec.onaudioend = () => log("onaudioend");
     rec.onnomatch = () => log("onnomatch");
     rec.onend = () => {
-      log("onend", `elapsed=${Date.now() - startedAtRef.current}ms`);
-      setListening(false);
+      log("onend");
       clearWatchdog();
       if (currentRecRef.current === rec) currentRecRef.current = null;
+      // Chrome は continuous: true でも長い無音や内部都合で止まる。
+      // ユーザーが停止/エラーを指示していなければ再開する。
+      if (keepAliveRef.current) {
+        log("auto-restart", "onend while keepAlive=true");
+        // Use a microtask gap to let the old instance fully release
+        setTimeout(() => {
+          if (keepAliveRef.current) start();
+        }, 50);
+      } else {
+        setListening(false);
+      }
     };
     rec.onerror = (ev) => {
       log("onerror", `${ev.error}${ev.message ? " / " + ev.message : ""}`);
+      // Permission / fatal errors: stop the keep-alive loop.
+      // `no-speech` は continuous: true でも Chrome が時々発火する軽エラーで、
+      // onend → auto-restart に任せるため keepAlive は維持。
+      const fatal =
+        ev.error === "not-allowed" ||
+        ev.error === "service-not-allowed" ||
+        ev.error === "audio-capture" ||
+        ev.error === "network";
+      if (fatal) {
+        keepAliveRef.current = false;
+      }
       const msg =
         ev.error === "not-allowed" || ev.error === "service-not-allowed"
           ? "マイクの使用が許可されていません（ブラウザ設定を確認）"
           : ev.error === "no-speech"
-            ? "音声が検出されませんでした"
+            ? null
             : ev.error === "aborted"
               ? null
               : `音声入力エラー: ${ev.error}`;
       if (msg) setError(msg);
-      setListening(false);
       clearWatchdog();
+      if (fatal) setListening(false);
     };
     rec.onresult = (ev) => {
       let transcript = "";
@@ -241,11 +267,13 @@ export function VoiceInputButton({
 
   const stop = () => {
     log("stop-invoked");
+    keepAliveRef.current = false;
     currentRecRef.current?.stop();
   };
 
   useEffect(() => {
     return () => {
+      keepAliveRef.current = false;
       clearWatchdog();
       currentRecRef.current?.abort();
       currentRecRef.current = null;

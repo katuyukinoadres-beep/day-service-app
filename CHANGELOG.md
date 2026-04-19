@@ -17,6 +17,13 @@
 
 ## [Unreleased]
 
+### Changed (音声入力を continuous モード + 自動再開)
+- `continuous: true` に変更。短い無音で勝手に終わらず、ユーザーがタップで停止するまで録音継続
+- Chrome が continuous でも内部都合で onend を出すケースに備え、`keepAlive` フラグで自動再開
+- `stop()` 呼び出し時と致命エラー（not-allowed / audio-capture / network）時は keepAlive=false にして再開ループを止める
+- 各発話の final result ごとに `onAppend` が追記される
+- monorepo 全 `package.json` を `1.1.0-dev.15` に bump
+
 ### Fixed (音声入力のウォッチドッグが録音中セッションを誤中断)
 - dev.13 診断ログで判明: ウォッチドッグが `onaudiostart` でクリアされず、3秒経つと録音中のセッションを強制 `abort()` していた
 - `onaudiostart` ハンドラで `clearWatchdog()` を呼ぶように修正
