@@ -17,6 +17,16 @@
 
 ## [Unreleased]
 
+### Added (児童×期間データ出力機能)
+- 新ページ `/documents/child-period-report` を追加
+- 児童 + 開始日 + 終了日を指定して、該当期間の記録をまとめて閲覧・出力できる
+- 利用者情報（氏名 / 生年月日 / 学校・学年）+ 件数 + 日付ごとのカード（気分・活動・特記事項・支援記録まとめ・送迎・記録者）を表示
+- 「印刷 / PDF保存」ボタン（A4 縦、`window.print()`）
+- 「CSV ダウンロード」ボタン（UTF-8 BOM 付き、Excel 直接開きで文字化けしない）
+- 帳票メニュー一覧に「📅 児童×期間データ出力」を追加
+- 紙記入日は「紙のフォームで記入済み」として別扱い
+- monorepo 全 `package.json` を `1.1.0-dev.17` に bump
+
 ### Changed (履歴・帳票を `daily_record_activities` 正規化テーブル経由の読み出しへ移行)
 - 履歴画面 / サービス提供記録帳票 / 業務日誌 / ホーム画面（先頭3件）/ Admin C層のダッシュボード・施設別記録一覧 の活動内容表示を、legacy `daily_records.activities text[]` から `daily_record_activities → activity_items` の join 読み出しへ切替
 - 活動名は `activity_items.name` 現値を表示（マスタ改名が履歴に即反映）。`sort_order` で並び順を正規化
