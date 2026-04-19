@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 interface SpeechRecognitionResultAlt {
   transcript: string;
@@ -57,60 +57,100 @@ export function VoiceInputButton({
   const [listening, setListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  // Keep latest onAppend so the single persistent recognition instance always
+  // calls the current prop, not the one captured at mount time.
+  const onAppendRef = useRef(onAppend);
+  useEffect(() => {
+    onAppendRef.current = onAppend;
+  }, [onAppend]);
 
-  // SSR 時は false、クライアント hydration 後に SpeechRecognition の有無を反映
   const supported = useSyncExternalStore(
     () => () => {},
     () => getSpeechRecognition() !== null,
     () => false
   );
 
-  const start = () => {
+  // Create ONE SpeechRecognition instance and reuse it. Chrome's Web Speech
+  // API fails silently on subsequent uses when a fresh instance is created
+  // per start; reusing a single instance is the reliable pattern.
+  useEffect(() => {
     const Ctor = getSpeechRecognition();
-    if (!Ctor) {
-      setError("このブラウザは音声入力に対応していません");
-      return;
-    }
-    setError(null);
+    if (!Ctor) return;
+
     const rec = new Ctor();
     rec.lang = "ja-JP";
     rec.continuous = false;
     rec.interimResults = false;
 
     rec.onstart = () => setListening(true);
-    rec.onend = () => {
-      setListening(false);
-      recognitionRef.current = null;
-    };
+    rec.onend = () => setListening(false);
     rec.onerror = (ev) => {
       const msg =
         ev.error === "not-allowed" || ev.error === "service-not-allowed"
           ? "マイクの使用が許可されていません（ブラウザ設定を確認）"
           : ev.error === "no-speech"
             ? "音声が検出されませんでした"
-            : `音声入力エラー: ${ev.error}`;
-      setError(msg);
+            : ev.error === "aborted"
+              ? null
+              : `音声入力エラー: ${ev.error}`;
+      if (msg) setError(msg);
       setListening(false);
-      recognitionRef.current = null;
     };
     rec.onresult = (ev) => {
       let transcript = "";
-      for (let i = ev.resultIndex; i < (ev.results as unknown as SpeechRecognitionResultLike[]).length; i++) {
+      for (
+        let i = ev.resultIndex;
+        i < (ev.results as unknown as SpeechRecognitionResultLike[]).length;
+        i++
+      ) {
         const r = (ev.results as unknown as SpeechRecognitionResultLike[])[i];
         if (r.isFinal && r[0]?.transcript) {
           transcript += r[0].transcript;
         }
       }
-      if (transcript) onAppend(transcript);
+      if (transcript) onAppendRef.current(transcript);
     };
 
+    recognitionRef.current = rec;
+
+    return () => {
+      try {
+        rec.abort();
+      } catch {
+        // ignore
+      }
+      recognitionRef.current = null;
+    };
+  }, []);
+
+  const start = () => {
+    const rec = recognitionRef.current;
+    if (!rec) {
+      setError("このブラウザは音声入力に対応していません");
+      return;
+    }
+    setError(null);
     try {
       rec.start();
-      recognitionRef.current = rec;
     } catch (err) {
-      setError(
-        `音声入力を開始できませんでした: ${err instanceof Error ? err.message : "unknown"}`
-      );
+      // InvalidStateError fires when start() is called on an already-running
+      // recognition. Abort and retry once on next tick.
+      try {
+        rec.abort();
+        setTimeout(() => {
+          try {
+            rec.start();
+          } catch (err2) {
+            setError(
+              `音声入力を開始できませんでした: ${err2 instanceof Error ? err2.message : "unknown"}`
+            );
+          }
+        }, 50);
+      } catch {
+        setError(
+          `音声入力を開始できませんでした: ${err instanceof Error ? err.message : "unknown"}`
+        );
+      }
     }
   };
 
