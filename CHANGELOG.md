@@ -17,6 +17,14 @@
 
 ## [Unreleased]
 
+### Fixed (音声入力のウォッチドッグが録音中セッションを誤中断)
+- dev.13 診断ログで判明: ウォッチドッグが `onaudiostart` でクリアされず、3秒経つと録音中のセッションを強制 `abort()` していた
+- `onaudiostart` ハンドラで `clearWatchdog()` を呼ぶように修正
+- ウォッチドッグ閾値を 3s → 8s（初回の permission prompt 待ちも許容）
+- エラー文言を「マイク起動が遅い/拒否」に限定
+- 真因: Web Speech API は正常動作。バグは Leon のウォッチドッグ実装側
+- monorepo 全 `package.json` を `1.1.0-dev.14` に bump
+
 ### Fixed / Diagnostic (音声入力の再発バグ調査版)
 - `VoiceInputButton` に以下を追加して 2回目以降失敗の真因を捕まえる:
   - **新インスタンス作成 per-start**（以前の persistent instance から再変更）+ **旧インスタンス明示 abort**

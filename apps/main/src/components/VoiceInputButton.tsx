@@ -158,7 +158,13 @@ export function VoiceInputButton({
       log("onstart", `attempt=${attempt}`);
       setListening(true);
     };
-    rec.onaudiostart = () => log("onaudiostart");
+    rec.onaudiostart = () => {
+      // Recognition is actively capturing audio. The watchdog's job is
+      // done; clear it so the user can speak for as long as they need
+      // without being force-aborted.
+      log("onaudiostart");
+      clearWatchdog();
+    };
     rec.onspeechstart = () => log("onspeechstart");
     rec.onspeechend = () => log("onspeechend");
     rec.onaudioend = () => log("onaudioend");
@@ -211,12 +217,18 @@ export function VoiceInputButton({
       return;
     }
 
-    // Watchdog: if onaudiostart never fires within 3s, surface silent failure
+    // Watchdog: surface a silent failure if onaudiostart never fires.
+    // Timeout set to 8s to cover the one-shot permission prompt on the
+    // first use (user may take a few seconds to grant). The watchdog
+    // clears itself in onaudiostart, so active sessions are not killed.
     clearWatchdog();
     watchdogRef.current = setTimeout(() => {
-      log("watchdog-timeout", "no audiostart within 3s → likely silent failure");
+      log(
+        "watchdog-timeout",
+        "no audiostart within 8s → マイク起動が遅すぎ / 拒否の可能性"
+      );
       setError(
-        "音声入力が始まりません。ブラウザのマイク権限を確認するか、診断ログを開いて状況を共有してください。"
+        "音声入力が始まりません。マイクの権限を確認してから再度お試しください。"
       );
       try {
         rec.abort();
@@ -224,7 +236,7 @@ export function VoiceInputButton({
         // ignore
       }
       setListening(false);
-    }, 3000);
+    }, 8000);
   };
 
   const stop = () => {
