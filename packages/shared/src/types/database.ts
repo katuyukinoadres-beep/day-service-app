@@ -276,6 +276,7 @@ export type Database = {
           departure_time: string | null;
           pickup_method: string | null;
           recorded_by: string | null;
+          paper_logged: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -295,6 +296,7 @@ export type Database = {
           departure_time?: string | null;
           pickup_method?: string | null;
           recorded_by?: string | null;
+          paper_logged?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -314,6 +316,7 @@ export type Database = {
           departure_time?: string | null;
           pickup_method?: string | null;
           recorded_by?: string | null;
+          paper_logged?: boolean;
           created_at?: string;
           updated_at?: string;
         };

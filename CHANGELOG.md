@@ -17,6 +17,21 @@
 
 ## [Unreleased]
 
+### Added (Phase B8b 完遂: 紙併用モードの機能実装)
+- **「今日は紙で記入しました」ボタン** を記録入力画面に追加（`paper_mode_enabled=true` の施設のみ表示）
+  - タップ → 確認ダイアログ → `daily_records` に空レコード+ `paper_logged=true` で insert（既存の通常記録がある場合は update で上書き）
+  - 保存後は通常保存と同じく次の未記録児童へ自動遷移
+- マイグレーション 015: `daily_records.paper_logged boolean default false` 追加
+- 紙記入記録は **ホーム画面で「記録済」扱い**（進捗カウントに含まれる）。カードには 📝 紙で記入 表示 + 右端に「紙」バッジ
+- 履歴画面: 紙記入カードは内容を「📝 紙のフォームで記入済み（アプリには内容なし）」表示 + 「紙で記入」バッジ
+- 記録画面: 既存レコードが `paper_logged=true` の場合、ヘッダーに「紙で記入済み」バッジ + amber バナー表示。通常項目を埋めて「更新する」で普通の記録へ切替可能
+- サービス提供記録帳票: 紙記入日は帳票生成せず「紙のフォームで記入済み」の案内文を表示
+- `daily_records` の通常保存パスは `paper_logged=false` を明示的に送るため、紙→アプリ切替が一発で走る
+- monorepo 全 `package.json` を `1.1.0-dev.12` に bump（`-dev.11` は voice-input fix と重複するため `-dev.12` に）
+
+### Fixed (音声入力の2回目以降サイレント失敗)
+(PR: fix/voice-input-repeat-failure で並行リリース)
+
 ### Changed (日報まるごとコピーに担当者名追加)
 - `buildRitalicoDailyReport` 出力の【サービス提供時間】と【気分】の間に【担当者】行を挿入
 - 担当者名は現在ログイン中ユーザーの `profiles.display_name` から取得（`useProfile` hook使用）

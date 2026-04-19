@@ -130,6 +130,11 @@ export default function HistoryPage() {
                 <p className="text-[15px] font-medium text-foreground flex-1">
                   {record.child?.name ?? "不明"}
                 </p>
+                {record.paper_logged && (
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                    紙で記入
+                  </span>
+                )}
                 <p className="text-[13px] text-sub">
                   {record.arrival_time && `${record.arrival_time}`}
                   {record.arrival_time && record.departure_time && " - "}
@@ -138,43 +143,49 @@ export default function HistoryPage() {
               </div>
 
               {/* 内容 */}
-              <div className="flex flex-col gap-1 text-[13px]">
-                <p>
-                  <span className="text-sub">気分: </span>
-                  {moodLabel(record.mood)}
+              {record.paper_logged ? (
+                <p className="text-[13px] text-amber-800">
+                  📝 紙のフォームで記入済み（アプリには内容なし）
                 </p>
-                {record.activities.length > 0 && (
+              ) : (
+                <div className="flex flex-col gap-1 text-[13px]">
                   <p>
-                    <span className="text-sub">活動: </span>
-                    {record.activities.join("・")}
+                    <span className="text-sub">気分: </span>
+                    {moodLabel(record.mood)}
                   </p>
-                )}
-                {/* 記録フレーズ・活動中のトピックスは AI への入力ヒントであり最終出力には含めない */}
-                {record.notes && (
-                  <p>
-                    <span className="text-sub">特記事項: </span>
-                    {record.notes}
-                  </p>
-                )}
-                {!record.notes && record.memo && (
-                  <p>
-                    <span className="text-sub">メモ（旧形式）: </span>
-                    {record.memo}
-                  </p>
-                )}
-                {record.ai_text && (
-                  <p>
-                    <span className="text-sub">支援記録まとめ: </span>
-                    {record.ai_text}
-                  </p>
-                )}
-                {record.pickup_method && (
-                  <p>
-                    <span className="text-sub">送迎: </span>
-                    {record.pickup_method}
-                  </p>
-                )}
-              </div>
+                  {record.activities.length > 0 && (
+                    <p>
+                      <span className="text-sub">活動: </span>
+                      {record.activities.join("・")}
+                    </p>
+                  )}
+                  {/* 記録フレーズ・活動中のトピックスは AI への入力ヒントであり最終出力には含めない */}
+                  {record.notes && (
+                    <p>
+                      <span className="text-sub">特記事項: </span>
+                      {record.notes}
+                    </p>
+                  )}
+                  {!record.notes && record.memo && (
+                    <p>
+                      <span className="text-sub">メモ（旧形式）: </span>
+                      {record.memo}
+                    </p>
+                  )}
+                  {record.ai_text && (
+                    <p>
+                      <span className="text-sub">支援記録まとめ: </span>
+                      {record.ai_text}
+                    </p>
+                  )}
+                  {record.pickup_method && (
+                    <p>
+                      <span className="text-sub">送迎: </span>
+                      {record.pickup_method}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* アクション */}
               <div className="flex gap-2 pt-1 border-t border-border mt-1">

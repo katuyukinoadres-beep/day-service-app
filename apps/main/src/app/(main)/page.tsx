@@ -176,6 +176,7 @@ export default function HomePage() {
                   const record = records.find(
                     (r) => r.child_id === child.id
                   );
+                  const isPaperLogged = record?.paper_logged === true;
                   const moodEmoji =
                     record?.mood === "good"
                       ? "😊"
@@ -203,11 +204,22 @@ export default function HomePage() {
                           <p className="text-[15px] font-medium text-foreground truncate">
                             {child.name}
                           </p>
-                          <p className="text-[13px] text-sub truncate">
-                            {moodEmoji}{" "}
-                            {record?.activities.slice(0, 3).join("・")}
-                          </p>
+                          {isPaperLogged ? (
+                            <p className="text-[13px] text-sub truncate">
+                              📝 紙で記入
+                            </p>
+                          ) : (
+                            <p className="text-[13px] text-sub truncate">
+                              {moodEmoji}{" "}
+                              {record?.activities.slice(0, 3).join("・")}
+                            </p>
+                          )}
                         </div>
+                        {isPaperLogged && (
+                          <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                            紙
+                          </span>
+                        )}
                       </Card>
                     </Link>
                   );
