@@ -17,6 +17,18 @@
 
 ## [Unreleased]
 
+### Changed (リタリコ h-navi 連絡帳 4ブロック構造準拠 — Phase B7.5 Slice 1)
+- `buildRitalicoDailyReport` を h-navi 連絡帳「活動の様子」欄の実運用フォーマット（4ブロック構造）に全面書き換え
+  - `【取組内容】 活動1／活動2／活動3`（スラッシュ区切り結合）
+  - `【活動の様子】{aiText本文}`
+  - `【その他】{特記事項}`
+  - `担当：{記録者名}`（末尾署名、ログインユーザー名を自動付与）
+- データ駆動 ON/OFF: 活動マスタ未選択なら【取組内容】省略、notes 空なら【その他】省略、recorderName 空なら担当署名省略
+- 既存の【実施日】【児童名】【サービス提供時間】【気分】【送迎方法】はコピー出力から除外（h-navi の連絡帳テキストボックス貼付けに特化、実績側の項目は別画面で入力されるため）
+- 関数引数から不要フィールド（date / childName / arrivalTime / departureTime / moodLabel / pickupMethod）を削除
+- 背景: 2026-04-20 の h-navi 実機調査（Playwright MCP 経由、23件サンプル分析）で、嶋田 / 藤村 / 目賀田 / 坪庭 / 井手 の5担当者が実運用している文体を把握 → ぱっと記録の出力テンプレを現場運用に完全合致させる方針に確定
+- monorepo 全 `package.json` を `1.1.0-dev.20` に bump
+
 ### Added (オフライン対応の基盤 — Phase B7 Slice 1)
 - **Service Worker** `apps/main/public/sw.js` を追加し、初回アクセス後はアプリシェル（ホーム・オフラインページ・アイコン・manifest）を precache。ナビゲーションは network-first で動作し、失敗時はキャッシュ経由 → 最終フォールバックとして `/offline` ページを表示
 - 静的アセット（`/_next/static/`、画像、CSS、JS、フォント）は cache-first で通信量を削減
