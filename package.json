@@ -1,6 +1,6 @@
 {
   "name": "day-service-app",
-  "version": "1.1.0-dev.23",
+  "version": "1.1.0-dev.24",
   "private": true,
   "workspaces": [
     "apps/*",

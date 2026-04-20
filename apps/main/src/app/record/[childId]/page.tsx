@@ -8,7 +8,6 @@ import { Chip } from "@/components/ui/Chip";
 import { Textarea } from "@/components/ui/Input";
 import { VoiceInputButton } from "@/components/VoiceInputButton";
 import { CopyButton } from "@/components/CopyButton";
-import { useProfile } from "@/lib/useProfile";
 import type {
   Child,
   Phrase,
@@ -17,7 +16,6 @@ import type {
   ActivityItem,
   DailyRecordActivity,
 } from "@patto/shared/types";
-import { buildRitalicoDailyReport } from "@patto/shared";
 
 const MOODS = [
   { value: "good" as const, emoji: "😊", label: "良好" },
@@ -38,12 +36,12 @@ function getCurrentTime(): string {
 }
 
 // buildRitalicoDailyReport は @patto/shared に移設済み（2026-04-21 Phase B7.5 Slice 2）。
+// アプリ側の転記コピー UI は 2026-04-21 Slice 3 で代表者ダッシュボードへ移管。
 
 export default function RecordPage() {
   const router = useRouter();
   const params = useParams();
   const childId = params.childId as string;
-  const { profile } = useProfile();
 
   const [child, setChild] = useState<Child | null>(null);
   const [phrases, setPhrases] = useState<Phrase[]>([]);
@@ -57,7 +55,6 @@ export default function RecordPage() {
   const [saving, setSaving] = useState(false);
   const [markingPaper, setMarkingPaper] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [summarizing, setSummarizing] = useState(false);
 
   const [mood, setMood] = useState<"good" | "neutral" | "bad" | null>(null);
   const [activityItems, setActivityItems] = useState<ActivityItem[]>([]);
@@ -806,47 +803,16 @@ export default function RecordPage() {
           </div>
         </div>
 
-        {/* リタリコ等への転記用まるごとコピー */}
-        <RitalicoCopyPanel
-          recorderName={profile?.display_name ?? ""}
-          selectedActivityNames={selectedActivityNames}
-          notes={notes}
-          aiText={aiText}
-          summarizing={summarizing}
-          onSummarize={async () => {
-            if (!aiText.trim() || summarizing) return;
-            setSummarizing(true);
-            try {
-              // aiText 以外の要素（ヘッダ・notes・署名）が占める文字数を算出し、目標 aiText 字数を逆算
-              const overhead = buildRitalicoDailyReport({
-                recorderName: profile?.display_name ?? "",
-                selectedActivityNames,
-                notes,
-                aiText: "",
-              }).length;
-              const SAFETY_MARGIN = 20;
-              const targetChars = Math.max(80, 500 - overhead - SAFETY_MARGIN);
-
-              const res = await fetch("/api/summarize-record", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text: aiText, targetChars }),
-              });
-              if (!res.ok) {
-                const { error } = await res.json().catch(() => ({ error: "要約に失敗しました" }));
-                alert(`要約に失敗しました: ${error}`);
-                return;
-              }
-              const { text: summarized } = await res.json();
-              setAiText(summarized);
-            } catch (e) {
-              console.error(e);
-              alert("要約リクエストに失敗しました");
-            } finally {
-              setSummarizing(false);
-            }
-          }}
-        />
+        {/* リタリコ転記は代表者ダッシュボードに移管（2026-04-21 Phase B7.5 Slice 3）。
+            ここでは案内だけ残し、職員は「書き終えて次へ」で提出するだけで転記依頼が完了する。 */}
+        <div className="rounded-xl border border-border bg-blue-50 p-3 text-[12px] text-blue-900">
+          <p className="font-medium">📋 リタリコ連絡帳への転記について</p>
+          <p className="mt-1 leading-relaxed">
+            リタリコへの転記は <strong>代表者ダッシュボード</strong> で一括処理されます。
+            この画面で <strong>「書き終えて次へ」</strong> を押すと、その記録が代表者に転記依頼として届きます。
+            職員側でコピー＆ペーストする必要はありません。
+          </p>
+        </div>
 
 
         {/* 保存: 下書き / 書き終えて次へ の2段構え */}
@@ -897,62 +863,5 @@ export default function RecordPage() {
   );
 }
 
-const SOFT_LIMIT = 500;
-
-function RitalicoCopyPanel({
-  recorderName,
-  selectedActivityNames,
-  notes,
-  aiText,
-  summarizing,
-  onSummarize,
-}: {
-  recorderName: string;
-  selectedActivityNames: string[];
-  notes: string;
-  aiText: string;
-  summarizing: boolean;
-  onSummarize: () => void;
-}) {
-  const output = buildRitalicoDailyReport({
-    recorderName,
-    selectedActivityNames,
-    notes,
-    aiText,
-  });
-  const chars = output.length;
-  const over = chars > SOFT_LIMIT;
-
-  return (
-    <div className="rounded-xl border border-border bg-white p-3">
-      <div className="mb-1 flex items-baseline justify-between gap-2">
-        <p className="text-[13px] font-medium text-foreground">リタリコ等への転記用</p>
-        <p className={`text-[11px] ${over ? "text-amber-700 font-medium" : "text-sub"}`}>
-          {chars}/{SOFT_LIMIT}字
-        </p>
-      </div>
-      <p className="text-[11px] text-sub mb-2">
-        現在の入力内容を h-navi 連絡帳 4ブロック構造で一括コピーします
-      </p>
-      {over && (
-        <div className="mb-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-[11px] text-amber-900">
-          <p className="mb-1.5 font-medium">⚠️ 500字を超えています（保護者が読み疲れる可能性）</p>
-          <button
-            type="button"
-            onClick={onSummarize}
-            disabled={summarizing || !aiText.trim()}
-            className="tap-target w-full rounded-lg bg-amber-600 px-3 py-1.5 text-[12px] font-medium text-white transition-colors active:bg-amber-700 disabled:opacity-50"
-          >
-            {summarizing ? "AI要約中..." : "AIで要約する（約380字に）"}
-          </button>
-        </div>
-      )}
-      <CopyButton
-        label="日報まるごとコピー"
-        variant="primary"
-        fullWidth
-        text={() => output}
-      />
-    </div>
-  );
-}
+// RitalicoCopyPanel / SOFT_LIMIT / /api/summarize-record は代表者ダッシュボード側で再利用される（将来）。
+// アプリ側の UI エントリはこのファイルから外したが、コード・API 本体は packages/shared と apps/main/src/app/api/summarize-record に残存。

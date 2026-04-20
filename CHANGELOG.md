@@ -17,6 +17,13 @@
 
 ## [Unreleased]
 
+### Changed (アプリ側転記コピーセクションを代表者ダッシュボードへ移管 — Phase B7.5 Slice 3)
+- `apps/main` 記録入力画面から **「リタリコ等への転記用」セクションを撤去**（字数カウンタ・要約ボタン・日報まるごとコピー ボタン）
+- 代わりに **青色の案内バナー** を配置：「リタリコへの転記は代表者ダッシュボードで一括処理されます。『書き終えて次へ』を押すと転記依頼として届きます」
+- 現場職員の UI から転記系ワークフローが完全に消え、ぱっと記録の入力だけに集中できる
+- 既存の `RitalicoCopyPanel` コンポーネント定義と `summarizing` state / `useProfile` 外側 hook は削除。`buildRitalicoDailyReport` と `/api/summarize-record` API 本体は代表者ダッシュボード側で再利用するため存続
+- monorepo 全 `package.json` を `1.1.0-dev.24` に bump
+
 ### Added (代表者集約の転記ワークフロー — Phase B7.5 Slice 2)
 - **DB マイグレーション** `016_transcribe_workflow.sql`: `daily_records` に `submitted_at` / `transcribed_at` の 2 カラムを追加
   - `submitted_at` NULL = 下書き / NOT NULL = 職員が「書き終えて次へ」で完了宣言
