@@ -17,6 +17,27 @@
 
 ## [Unreleased]
 
+### Added (代表者集約の転記ワークフロー — Phase B7.5 Slice 2)
+- **DB マイグレーション** `016_transcribe_workflow.sql`: `daily_records` に `submitted_at` / `transcribed_at` の 2 カラムを追加
+  - `submitted_at` NULL = 下書き / NOT NULL = 職員が「書き終えて次へ」で完了宣言
+  - `transcribed_at` NULL = 転記待ち / NOT NULL = 代表者が h-navi 転記完了をマーク
+  - 既存レコードは `submitted_at = updated_at` で埋める（過去分は全て提出済扱い）
+  - 提出済かつ未転記レコード用のインデックス `idx_daily_records_awaiting_transcribe` 追加
+- **アプリ側 2 ボタン化** (`apps/main/src/app/record/[childId]/page.tsx`)
+  - **「書き終えて次へ（代表者に転記依頼）」**（primary）: `submitted_at = NOW()` で完了宣言 → 次の未記録児童へ遷移
+  - **「下書き保存（この画面に留まる）」**（secondary）: `submitted_at` は変更せず、画面に留まる
+  - 既存レコードが下書き状態（`submitted_at IS NULL`）のときは注意文 `⚠️ この記録はまだ下書き状態です` を表示
+- **facility-admin** に `/transcribe` ページ新設
+  - 日付選択 + 「未転記 / 転記済み / 下書き / すべて」フィルタ
+  - 各行: 児童名 / 記録者名 / 提出時刻 / 文字数（500字超は amber） / 4ブロック プレビュー
+  - 「転記用コピー」ボタン（クリップボード）/「h-navi 転記完了をマーク」ボタン
+  - 「h-navi を別タブで開く」ショートカット
+- **共通ヘルパ**: `buildRitalicoDailyReport` / `LITALICO_SOFT_LIMIT` を `@patto/shared` へ移設し main/facility-admin 両アプリで共有
+- サイドバーに「リタリコ転記」メニュー項目追加
+- monorepo 全 `package.json` を `1.1.0-dev.23` に bump
+
+**⚠️ 適用手順**: `016_transcribe_workflow.sql` を Supabase に適用すること（Dashboard SQL Editor or CLI）。適用後に Vercel のデプロイが本機能を利用可能になる。
+
 ### Fixed (要約結果の二重出力修正 — Phase B7.5 Slice 1.5 hotfix)
 - `/api/summarize-record` が 4ブロック全体ではなく **`aiText` 本文のみ**を圧縮する方式に変更（クライアント側で aiText 以外のオーバーヘッド字数を計算して動的に targetChars を逆算）
 - Sonnet 4.6 のシステムプロンプトから「署名末尾保持」を削除し、「**見出し・署名を一切追加しない**」を明記。クライアントでは API 応答を `setAiText` に直接書き戻すだけ（抽出用正規表現を撤廃）

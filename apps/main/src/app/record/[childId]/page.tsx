@@ -17,6 +17,7 @@ import type {
   ActivityItem,
   DailyRecordActivity,
 } from "@patto/shared/types";
+import { buildRitalicoDailyReport } from "@patto/shared";
 
 const MOODS = [
   { value: "good" as const, emoji: "😊", label: "良好" },
@@ -36,49 +37,7 @@ function getCurrentTime(): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-/**
- * リタリコ h-navi 連絡帳の「活動の様子」欄に貼り付けるためのテキストを生成する。
- *
- * 4ブロック構造（2026-04-20 h-navi 実機調査で確定した実運用フォーマット）:
- *   【取組内容】活動1／活動2／活動3
- *   【活動の様子】{aiText本文}
- *   【その他】{特記事項}
- *   担当：{記録者名}
- *
- * データ駆動 ON/OFF:
- *   - 活動マスタ未選択なら【取組内容】を省略
- *   - aiText 空なら【活動の様子】自体を省略（保存できないので通常ありえないが安全のため）
- *   - notes 空なら【その他】を省略
- *   - recorderName 空なら担当署名を省略
- */
-function buildRitalicoDailyReport(params: {
-  recorderName: string;
-  selectedActivityNames: string[];
-  notes: string;
-  aiText: string;
-}): string {
-  const { recorderName, selectedActivityNames, notes, aiText } = params;
-
-  const blocks: string[] = [];
-
-  if (selectedActivityNames.length > 0) {
-    blocks.push(`【取組内容】 ${selectedActivityNames.join("／")}`);
-  }
-
-  if (aiText.trim()) {
-    blocks.push(`【活動の様子】\n${aiText.trim()}`);
-  }
-
-  if (notes.trim()) {
-    blocks.push(`【その他】\n${notes.trim()}`);
-  }
-
-  if (recorderName) {
-    blocks.push(`担当：${recorderName}`);
-  }
-
-  return blocks.join("\n\n");
-}
+// buildRitalicoDailyReport は @patto/shared に移設済み（2026-04-21 Phase B7.5 Slice 2）。
 
 export default function RecordPage() {
   const router = useRouter();
@@ -319,7 +278,9 @@ export default function RecordPage() {
     {}
   );
 
-  const handleSave = async () => {
+  // mode="draft": submitted_at を NULL のまま（下書き保存、現画面に留まる）
+  // mode="submit": submitted_at = NOW() をセット（書き終えて次へ、次の未記録児童へ遷移）
+  const handleSave = async (mode: "draft" | "submit" = "submit") => {
     if (!child) return;
     setSaving(true);
 
@@ -339,6 +300,15 @@ export default function RecordPage() {
       return;
     }
 
+    // submitted_at の扱い:
+    //   - mode=submit: 現在時刻で確定（新規でも既存でも上書き）
+    //   - mode=draft + 既に submitted_at あり: 代表者の転記準備は維持したいのでそのまま残す
+    //   - mode=draft + submitted_at なし: NULL のまま（下書き継続）
+    const submittedAt =
+      mode === "submit"
+        ? new Date().toISOString()
+        : existingRecord?.submitted_at ?? null;
+
     const recordData = {
       facility_id: profile.facility_id,
       child_id: childId,
@@ -356,6 +326,7 @@ export default function RecordPage() {
       departure_time: departureTime || null,
       pickup_method: pickupMethod || null,
       recorded_by: user.id,
+      submitted_at: submittedAt,
       // 通常の保存では紙記入フラグは立てない（既に paper_logged の既存行がある場合も通常保存で上書きされる）
       paper_logged: false,
     };
@@ -395,17 +366,24 @@ export default function RecordPage() {
       }
     }
 
-    // 次の未記録児童へ自動遷移
-    const recordedIds = new Set(allRecords.map((r) => r.child_id));
-    recordedIds.add(childId); // 今保存したものを追加
-    const nextChild = allChildren.find((c) => !recordedIds.has(c.id));
+    // mode=submit: 次の未記録児童へ自動遷移（既存挙動）
+    // mode=draft: 現画面に留まり、存在バッジの表示だけ更新する
+    if (mode === "submit") {
+      const recordedIds = new Set(allRecords.map((r) => r.child_id));
+      recordedIds.add(childId); // 今保存したものを追加
+      const nextChild = allChildren.find((c) => !recordedIds.has(c.id));
 
-    if (nextChild) {
-      router.replace(`/record/${nextChild.id}`);
+      if (nextChild) {
+        router.replace(`/record/${nextChild.id}`);
+      } else {
+        router.push("/");
+      }
+      router.refresh();
     } else {
-      router.push("/");
+      // 下書き保存: 画面遷移せずに一時メッセージだけ更新
+      setSaving(false);
+      router.refresh();
     }
-    router.refresh();
   };
 
   const handleMarkPaperLogged = async () => {
@@ -871,14 +849,33 @@ export default function RecordPage() {
         />
 
 
-        {/* 保存 */}
-        <Button onClick={handleSave} fullWidth disabled={saving || markingPaper}>
-          {saving
-            ? "保存中..."
-            : existingRecord
-              ? "更新する"
-              : "保存して次へ"}
-        </Button>
+        {/* 保存: 下書き / 書き終えて次へ の2段構え */}
+        <div className="space-y-2">
+          <Button
+            onClick={() => handleSave("submit")}
+            fullWidth
+            disabled={saving || markingPaper}
+          >
+            {saving
+              ? "保存中..."
+              : existingRecord?.submitted_at
+                ? "更新して次へ"
+                : "書き終えて次へ（代表者に転記依頼）"}
+          </Button>
+          <button
+            type="button"
+            onClick={() => handleSave("draft")}
+            disabled={saving || markingPaper}
+            className="tap-target w-full rounded-xl border border-border bg-white px-4 py-3 text-[14px] font-medium text-foreground transition-colors hover:bg-gray-50 active:bg-gray-100 disabled:opacity-50"
+          >
+            {saving ? "保存中..." : "下書き保存（この画面に留まる）"}
+          </button>
+          {existingRecord && !existingRecord.submitted_at && (
+            <p className="text-[11px] text-amber-700">
+              ⚠️ この記録はまだ下書き状態です。完成したら「書き終えて次へ」を押してください。
+            </p>
+          )}
+        </div>
 
         {/* 紙併用モード時のみ: 紙で記入したものとしてマーク */}
         {paperMode && !existingRecord?.paper_logged && (
