@@ -839,18 +839,20 @@ export default function RecordPage() {
             if (!aiText.trim() || summarizing) return;
             setSummarizing(true);
             try {
+              // aiText 以外の要素（ヘッダ・notes・署名）が占める文字数を算出し、目標 aiText 字数を逆算
+              const overhead = buildRitalicoDailyReport({
+                recorderName: profile?.display_name ?? "",
+                selectedActivityNames,
+                notes,
+                aiText: "",
+              }).length;
+              const SAFETY_MARGIN = 20;
+              const targetChars = Math.max(80, 500 - overhead - SAFETY_MARGIN);
+
               const res = await fetch("/api/summarize-record", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  text: buildRitalicoDailyReport({
-                    recorderName: profile?.display_name ?? "",
-                    selectedActivityNames,
-                    notes,
-                    aiText,
-                  }),
-                  targetChars: 380,
-                }),
+                body: JSON.stringify({ text: aiText, targetChars }),
               });
               if (!res.ok) {
                 const { error } = await res.json().catch(() => ({ error: "要約に失敗しました" }));
@@ -858,14 +860,7 @@ export default function RecordPage() {
                 return;
               }
               const { text: summarized } = await res.json();
-              // 圧縮結果は 4 ブロック全体を含むため、【活動の様子】セクションだけ抜き取って aiText に戻す
-              const activityMatch = summarized.match(/【活動の様子】\s*\n([\s\S]*?)(?:\n{2,}【その他】|\n{2,}担当：|$)/);
-              if (activityMatch && activityMatch[1].trim()) {
-                setAiText(activityMatch[1].trim());
-              } else {
-                // 抽出失敗時は本文全体で上書き（稀だが安全側）
-                setAiText(summarized);
-              }
+              setAiText(summarized);
             } catch (e) {
               console.error(e);
               alert("要約リクエストに失敗しました");
