@@ -98,6 +98,7 @@ export default function RecordPage() {
   const [saving, setSaving] = useState(false);
   const [markingPaper, setMarkingPaper] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [summarizing, setSummarizing] = useState(false);
 
   const [mood, setMood] = useState<"good" | "neutral" | "bad" | null>(null);
   const [activityItems, setActivityItems] = useState<ActivityItem[]>([]);
@@ -828,27 +829,52 @@ export default function RecordPage() {
         </div>
 
         {/* リタリコ等への転記用まるごとコピー */}
-        <div className="rounded-xl border border-border bg-white p-3">
-          <p className="text-[13px] font-medium text-foreground mb-1">
-            リタリコ等への転記用
-          </p>
-          <p className="text-[11px] text-sub mb-2">
-            現在の入力内容を日報フォーマットで一括コピーします
-          </p>
-          <CopyButton
-            label="日報まるごとコピー"
-            variant="primary"
-            fullWidth
-            text={() =>
-              buildRitalicoDailyReport({
-                recorderName: profile?.display_name ?? "",
-                selectedActivityNames,
-                notes,
-                aiText,
-              })
+        <RitalicoCopyPanel
+          recorderName={profile?.display_name ?? ""}
+          selectedActivityNames={selectedActivityNames}
+          notes={notes}
+          aiText={aiText}
+          summarizing={summarizing}
+          onSummarize={async () => {
+            if (!aiText.trim() || summarizing) return;
+            setSummarizing(true);
+            try {
+              const res = await fetch("/api/summarize-record", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  text: buildRitalicoDailyReport({
+                    recorderName: profile?.display_name ?? "",
+                    selectedActivityNames,
+                    notes,
+                    aiText,
+                  }),
+                  targetChars: 380,
+                }),
+              });
+              if (!res.ok) {
+                const { error } = await res.json().catch(() => ({ error: "要約に失敗しました" }));
+                alert(`要約に失敗しました: ${error}`);
+                return;
+              }
+              const { text: summarized } = await res.json();
+              // 圧縮結果は 4 ブロック全体を含むため、【活動の様子】セクションだけ抜き取って aiText に戻す
+              const activityMatch = summarized.match(/【活動の様子】\s*\n([\s\S]*?)(?:\n{2,}【その他】|\n{2,}担当：|$)/);
+              if (activityMatch && activityMatch[1].trim()) {
+                setAiText(activityMatch[1].trim());
+              } else {
+                // 抽出失敗時は本文全体で上書き（稀だが安全側）
+                setAiText(summarized);
+              }
+            } catch (e) {
+              console.error(e);
+              alert("要約リクエストに失敗しました");
+            } finally {
+              setSummarizing(false);
             }
-          />
-        </div>
+          }}
+        />
+
 
         {/* 保存 */}
         <Button onClick={handleSave} fullWidth disabled={saving || markingPaper}>
@@ -875,6 +901,66 @@ export default function RecordPage() {
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+const SOFT_LIMIT = 500;
+
+function RitalicoCopyPanel({
+  recorderName,
+  selectedActivityNames,
+  notes,
+  aiText,
+  summarizing,
+  onSummarize,
+}: {
+  recorderName: string;
+  selectedActivityNames: string[];
+  notes: string;
+  aiText: string;
+  summarizing: boolean;
+  onSummarize: () => void;
+}) {
+  const output = buildRitalicoDailyReport({
+    recorderName,
+    selectedActivityNames,
+    notes,
+    aiText,
+  });
+  const chars = output.length;
+  const over = chars > SOFT_LIMIT;
+
+  return (
+    <div className="rounded-xl border border-border bg-white p-3">
+      <div className="mb-1 flex items-baseline justify-between gap-2">
+        <p className="text-[13px] font-medium text-foreground">リタリコ等への転記用</p>
+        <p className={`text-[11px] ${over ? "text-amber-700 font-medium" : "text-sub"}`}>
+          {chars}/{SOFT_LIMIT}字
+        </p>
+      </div>
+      <p className="text-[11px] text-sub mb-2">
+        現在の入力内容を h-navi 連絡帳 4ブロック構造で一括コピーします
+      </p>
+      {over && (
+        <div className="mb-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-[11px] text-amber-900">
+          <p className="mb-1.5 font-medium">⚠️ 500字を超えています（保護者が読み疲れる可能性）</p>
+          <button
+            type="button"
+            onClick={onSummarize}
+            disabled={summarizing || !aiText.trim()}
+            className="tap-target w-full rounded-lg bg-amber-600 px-3 py-1.5 text-[12px] font-medium text-white transition-colors active:bg-amber-700 disabled:opacity-50"
+          >
+            {summarizing ? "AI要約中..." : "AIで要約する（約380字に）"}
+          </button>
+        </div>
+      )}
+      <CopyButton
+        label="日報まるごとコピー"
+        variant="primary"
+        fullWidth
+        text={() => output}
+      />
     </div>
   );
 }
