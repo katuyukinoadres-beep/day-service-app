@@ -277,6 +277,8 @@ export type Database = {
           pickup_method: string | null;
           recorded_by: string | null;
           paper_logged: boolean;
+          submitted_at: string | null;
+          transcribed_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -297,6 +299,8 @@ export type Database = {
           pickup_method?: string | null;
           recorded_by?: string | null;
           paper_logged?: boolean;
+          submitted_at?: string | null;
+          transcribed_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -317,6 +321,8 @@ export type Database = {
           pickup_method?: string | null;
           recorded_by?: string | null;
           paper_logged?: boolean;
+          submitted_at?: string | null;
+          transcribed_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
