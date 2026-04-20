@@ -36,75 +36,48 @@ function getCurrentTime(): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
+/**
+ * リタリコ h-navi 連絡帳の「活動の様子」欄に貼り付けるためのテキストを生成する。
+ *
+ * 4ブロック構造（2026-04-20 h-navi 実機調査で確定した実運用フォーマット）:
+ *   【取組内容】活動1／活動2／活動3
+ *   【活動の様子】{aiText本文}
+ *   【その他】{特記事項}
+ *   担当：{記録者名}
+ *
+ * データ駆動 ON/OFF:
+ *   - 活動マスタ未選択なら【取組内容】を省略
+ *   - aiText 空なら【活動の様子】自体を省略（保存できないので通常ありえないが安全のため）
+ *   - notes 空なら【その他】を省略
+ *   - recorderName 空なら担当署名を省略
+ */
 function buildRitalicoDailyReport(params: {
-  date: string;
-  childName: string;
-  arrivalTime: string;
-  departureTime: string;
   recorderName: string;
-  moodLabel: string;
   selectedActivityNames: string[];
   notes: string;
   aiText: string;
-  pickupMethod: string;
 }): string {
-  const {
-    date,
-    childName,
-    arrivalTime,
-    departureTime,
-    recorderName,
-    moodLabel,
-    selectedActivityNames,
-    notes,
-    aiText,
-    pickupMethod,
-  } = params;
+  const { recorderName, selectedActivityNames, notes, aiText } = params;
 
-  // NOTE: 記録フレーズ (phrases) と 活動中のトピックス (topics) は
-  // AI への入力ヒントであり最終出力ではないので意図的に含めない
-
-  const lines: string[] = [];
-  lines.push(`【実施日】 ${date}`);
-  lines.push(`【児童名】 ${childName}`);
-  const timeRange =
-    arrivalTime && departureTime
-      ? `${arrivalTime} 〜 ${departureTime}`
-      : arrivalTime
-        ? `${arrivalTime} 〜`
-        : departureTime
-          ? `〜 ${departureTime}`
-          : "";
-  if (timeRange) lines.push(`【サービス提供時間】 ${timeRange}`);
-  if (recorderName) lines.push(`【担当者】 ${recorderName}`);
-  lines.push(`【気分】 ${moodLabel}`);
+  const blocks: string[] = [];
 
   if (selectedActivityNames.length > 0) {
-    lines.push("");
-    lines.push("【活動内容】");
-    for (const name of selectedActivityNames) {
-      lines.push(`・${name}`);
-    }
-  }
-
-  if (notes.trim()) {
-    lines.push("");
-    lines.push("【特記事項】");
-    lines.push(notes.trim());
+    blocks.push(`【取組内容】 ${selectedActivityNames.join("／")}`);
   }
 
   if (aiText.trim()) {
-    lines.push("");
-    lines.push("【支援記録まとめ】");
-    lines.push(aiText.trim());
+    blocks.push(`【活動の様子】\n${aiText.trim()}`);
   }
 
-  if (pickupMethod) {
-    lines.push("");
-    lines.push(`【送迎方法】 ${pickupMethod}`);
+  if (notes.trim()) {
+    blocks.push(`【その他】\n${notes.trim()}`);
   }
 
-  return lines.join("\n");
+  if (recorderName) {
+    blocks.push(`担当：${recorderName}`);
+  }
+
+  return blocks.join("\n\n");
 }
 
 export default function RecordPage() {
@@ -868,17 +841,10 @@ export default function RecordPage() {
             fullWidth
             text={() =>
               buildRitalicoDailyReport({
-                date: today,
-                childName: child.name,
-                arrivalTime,
-                departureTime,
                 recorderName: profile?.display_name ?? "",
-                moodLabel:
-                  MOODS.find((m) => m.value === mood)?.label ?? "未選択",
                 selectedActivityNames,
                 notes,
                 aiText,
-                pickupMethod,
               })
             }
           />
