@@ -1,29 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@patto/shared/supabase/client";
 import { Header } from "@/components/ui/Header";
 import { Card } from "@/components/ui/Card";
 import type { Child } from "@patto/shared/types";
+import { useCachedQuery } from "@/lib/useCachedQuery";
+import { useCurrentUserId } from "@/lib/useCurrentUserId";
+import { TTL } from "@/lib/readCache";
 
 export default function ChildrenPage() {
-  const [children, setChildren] = useState<Child[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchChildren = async () => {
+  const { userId, ready } = useCurrentUserId();
+  const { data, loading: fetching } = useCachedQuery<Child[]>(
+    "children:active",
+    async () => {
       const supabase = createClient();
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("children")
         .select("*")
         .eq("is_active", true)
         .order("name_kana", { ascending: true });
-      setChildren((data as Child[]) ?? []);
-      setLoading(false);
-    };
-    fetchChildren();
-  }, []);
+      if (error) throw error;
+      return (data as Child[]) ?? [];
+    },
+    { ttlMs: TTL.oneDay, ownerId: userId, enabled: ready }
+  );
+  const children = data ?? [];
+  const loading = !ready || (fetching && children.length === 0);
 
   return (
     <div>

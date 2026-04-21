@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@patto/shared/supabase/client";
 import { Card } from "@/components/ui/Card";
@@ -9,6 +9,9 @@ import {
   formatActivitySelections,
   type DailyRecordActivityJoin,
 } from "@patto/shared";
+import { useCachedQuery } from "@/lib/useCachedQuery";
+import { useCurrentUserId } from "@/lib/useCurrentUserId";
+import { TTL } from "@/lib/readCache";
 
 type HomeRecord = DailyRecord & {
   daily_record_activities: DailyRecordActivityJoin[] | null;
@@ -20,64 +23,90 @@ function getToday(): string {
 }
 
 export default function HomePage() {
-  const [children, setChildren] = useState<Child[]>([]);
-  const [records, setRecords] = useState<HomeRecord[]>([]);
-  const [paperMode, setPaperMode] = useState(false);
-  const [loading, setLoading] = useState(true);
-
   const today = getToday();
-  const recordedChildIds = new Set(records.map((r) => r.child_id));
-  const unrecorded = children.filter((c) => !recordedChildIds.has(c.id));
-  const recorded = children.filter((c) => recordedChildIds.has(c.id));
-  const progress = children.length > 0
-    ? `${recorded.length}/${children.length}`
-    : "0/0";
+  const { userId, ready } = useCurrentUserId();
+  const [paperMode, setPaperMode] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
+  const childrenQuery = useCachedQuery<Child[]>(
+    "children:active",
+    async () => {
       const supabase = createClient();
+      const { data, error } = await supabase
+        .from("children")
+        .select("*")
+        .eq("is_active", true)
+        .order("name_kana", { ascending: true });
+      if (error) throw error;
+      return (data as Child[]) ?? [];
+    },
+    { ttlMs: TTL.oneDay, ownerId: userId, enabled: ready }
+  );
 
-      const [childrenRes, recordsRes, userRes] = await Promise.all([
-        supabase
-          .from("children")
-          .select("*")
-          .eq("is_active", true)
-          .order("name_kana", { ascending: true }),
-        supabase
-          .from("daily_records")
-          .select(
-            "*, daily_record_activities(detail, activity_items(id, name, sort_order))",
-          )
-          .eq("date", today),
-        supabase.auth.getUser(),
-      ]);
+  const recordsQuery = useCachedQuery<HomeRecord[]>(
+    `daily_records:${today}`,
+    async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("daily_records")
+        .select(
+          "*, daily_record_activities(detail, activity_items(id, name, sort_order))"
+        )
+        .eq("date", today);
+      if (error) throw error;
+      return (data as HomeRecord[]) ?? [];
+    },
+    { ttlMs: TTL.fiveMinutes, ownerId: userId, enabled: ready }
+  );
 
-      setChildren((childrenRes.data as Child[]) ?? []);
-      setRecords((recordsRes.data as HomeRecord[]) ?? []);
-
-      const userId = userRes.data.user?.id;
-      if (userId) {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("facility_id")
-          .eq("id", userId)
-          .single();
-        const profile = profileData as { facility_id: string } | null;
-        if (profile) {
-          const { data: facData } = await supabase
-            .from("facilities")
-            .select("paper_mode_enabled")
-            .eq("id", profile.facility_id)
-            .single();
-          const fac = facData as { paper_mode_enabled: boolean } | null;
-          setPaperMode(fac?.paper_mode_enabled ?? false);
-        }
-      }
-
-      setLoading(false);
+  // paper_mode は1セッションで滅多に変化しないので簡易に素fetch。キャッシュ価値低く Slice 対象外。
+  useEffect(() => {
+    if (!ready || !userId) return;
+    let cancelled = false;
+    (async () => {
+      const supabase = createClient();
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("facility_id")
+        .eq("id", userId)
+        .single();
+      const profile = profileData as { facility_id: string } | null;
+      if (!profile || cancelled) return;
+      const { data: facData } = await supabase
+        .from("facilities")
+        .select("paper_mode_enabled")
+        .eq("id", profile.facility_id)
+        .single();
+      const fac = facData as { paper_mode_enabled: boolean } | null;
+      if (!cancelled) setPaperMode(fac?.paper_mode_enabled ?? false);
+    })();
+    return () => {
+      cancelled = true;
     };
-    fetchData();
-  }, [today]);
+  }, [ready, userId]);
+
+  const children = useMemo<Child[]>(
+    () => childrenQuery.data ?? [],
+    [childrenQuery.data]
+  );
+  const records = useMemo<HomeRecord[]>(
+    () => recordsQuery.data ?? [],
+    [recordsQuery.data]
+  );
+  const loading =
+    !ready ||
+    (childrenQuery.loading && children.length === 0) ||
+    (recordsQuery.loading && records.length === 0);
+
+  const { unrecorded, recorded, progress } = useMemo(() => {
+    const recordedChildIds = new Set(records.map((r) => r.child_id));
+    const un = children.filter((c) => !recordedChildIds.has(c.id));
+    const rec = children.filter((c) => recordedChildIds.has(c.id));
+    return {
+      unrecorded: un,
+      recorded: rec,
+      progress: children.length > 0 ? `${rec.length}/${children.length}` : "0/0",
+    };
+  }, [children, records]);
 
   return (
     <div>

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { Chip } from "@/components/ui/Chip";
 import { DOMAIN_TAGS } from "@patto/shared/constants";
 import type { Child } from "@patto/shared/types";
+import { invalidate } from "@/lib/readCache";
 
 const ICON_COLORS = [
   "#1B6B4A", "#E8913A", "#3B82F6", "#8B5CF6",
@@ -117,6 +118,7 @@ export default function EditChildPage() {
       .eq("id", childId);
 
     if (!error) {
+      await invalidate("children:active");
       router.push("/children");
       router.refresh();
     }
@@ -132,6 +134,7 @@ export default function EditChildPage() {
       .update({ is_active: false })
       .eq("id", childId);
 
+    await invalidate("children:active");
     router.push("/children");
     router.refresh();
   };

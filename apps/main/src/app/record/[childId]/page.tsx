@@ -9,6 +9,9 @@ import { Textarea } from "@/components/ui/Input";
 import { VoiceInputButton } from "@/components/VoiceInputButton";
 import { CopyButton } from "@/components/CopyButton";
 import { enqueueSave } from "@/lib/offlineQueue";
+import { useCachedQuery } from "@/lib/useCachedQuery";
+import { useCurrentUserId } from "@/lib/useCurrentUserId";
+import { TTL, invalidate } from "@/lib/readCache";
 import type {
   Child,
   Phrase,
@@ -45,7 +48,6 @@ export default function RecordPage() {
   const childId = params.childId as string;
 
   const [child, setChild] = useState<Child | null>(null);
-  const [phrases, setPhrases] = useState<Phrase[]>([]);
   const [topicsTemplates, setTopicsTemplates] = useState<QuickTemplate[]>([]);
   const [notesTemplates, setNotesTemplates] = useState<QuickTemplate[]>([]);
   const [existingRecord, setExistingRecord] = useState<DailyRecord | null>(null);
@@ -57,8 +59,38 @@ export default function RecordPage() {
   const [markingPaper, setMarkingPaper] = useState(false);
   const [generating, setGenerating] = useState(false);
 
+  const { userId, ready } = useCurrentUserId();
+  const phrasesQuery = useCachedQuery<Phrase[]>(
+    "phrase_bank:all",
+    async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("phrase_bank")
+        .select("*")
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return (data as Phrase[]) ?? [];
+    },
+    { ttlMs: TTL.oneWeek, ownerId: userId, enabled: ready }
+  );
+  const activityItemsQuery = useCachedQuery<ActivityItem[]>(
+    "activity_items:all",
+    async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("activity_items")
+        .select("*")
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data as ActivityItem[]) ?? [];
+    },
+    { ttlMs: TTL.oneWeek, ownerId: userId, enabled: ready }
+  );
+  const phrases = phrasesQuery.data ?? [];
+  const activityItems = activityItemsQuery.data ?? [];
+
   const [mood, setMood] = useState<"good" | "neutral" | "bad" | null>(null);
-  const [activityItems, setActivityItems] = useState<ActivityItem[]>([]);
   // key: activity_item_id, value: detail text (空文字＝選択だが詳細なし or 詳細欄なし)
   const [itemSelections, setItemSelections] = useState<Record<string, string>>(
     {}
@@ -77,20 +109,15 @@ export default function RecordPage() {
     const fetchData = async () => {
       const supabase = createClient();
 
+      // phrase_bank / activity_items は useCachedQuery で別途 SWR 管理（Slice 3）
       const [
         childRes,
-        phrasesRes,
         recordRes,
         childrenRes,
         recordsRes,
         templatesRes,
-        activityItemsRes,
       ] = await Promise.all([
         supabase.from("children").select("*").eq("id", childId).single(),
-        supabase
-          .from("phrase_bank")
-          .select("*")
-          .order("sort_order", { ascending: true }),
         supabase
           .from("daily_records")
           .select("*")
@@ -112,15 +139,9 @@ export default function RecordPage() {
           .eq("is_active", true)
           .order("sort_order", { ascending: true })
           .order("created_at", { ascending: true }),
-        supabase
-          .from("activity_items")
-          .select("*")
-          .order("sort_order", { ascending: true })
-          .order("created_at", { ascending: true }),
       ]);
 
       setChild(childRes.data as Child | null);
-      setPhrases((phrasesRes.data as Phrase[]) ?? []);
       setAllChildren((childrenRes.data as Child[]) ?? []);
       setAllRecords((recordsRes.data as DailyRecord[]) ?? []);
 
@@ -139,7 +160,6 @@ export default function RecordPage() {
       const allTemplates = (templatesRes.data as QuickTemplate[]) ?? [];
       setTopicsTemplates(allTemplates.filter((t) => t.field_type === "topics"));
       setNotesTemplates(allTemplates.filter((t) => t.field_type === "notes"));
-      setActivityItems((activityItemsRes.data as ActivityItem[]) ?? []);
 
       // 既存記録があれば復元
       const existingData = recordRes.data as DailyRecord | null;
@@ -403,6 +423,9 @@ export default function RecordPage() {
         if (insErr) throw insErr;
       }
 
+      // Slice 3: 当日 daily_records キャッシュを無効化（ホーム画面で即座に反映）
+      await invalidate(`daily_records:${today}`);
+
       proceed();
     } catch (err) {
       // ネットワーク断などでオンライン検知はされていても実 fetch が失敗したケース。
@@ -491,6 +514,9 @@ export default function RecordPage() {
         .delete()
         .eq("daily_record_id", paperRecordId);
     }
+
+    // Slice 3: 当日 daily_records キャッシュを無効化
+    await invalidate(`daily_records:${today}`);
 
     // 次の未記録児童へ自動遷移（通常保存と同挙動）
     const recordedIds = new Set(allRecords.map((r) => r.child_id));

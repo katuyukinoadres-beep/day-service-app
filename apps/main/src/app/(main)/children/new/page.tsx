@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Chip } from "@/components/ui/Chip";
 import { DOMAIN_TAGS } from "@patto/shared/constants";
+import { invalidate } from "@/lib/readCache";
 
 const ICON_COLORS = [
   "#1B6B4A", "#E8913A", "#3B82F6", "#8B5CF6",
@@ -109,6 +110,7 @@ export default function NewChildPage() {
       return;
     }
 
+    await invalidate("children:active");
     router.push("/children");
     router.refresh();
     setSaving(false);

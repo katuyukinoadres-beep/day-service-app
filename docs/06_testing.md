@@ -265,6 +265,12 @@ Service Worker と `/offline` ページの動作確認。
 | OFF-012 | オンライン時 fetch 失敗のフォールバック | 疑似的に Supabase 側 500 を返す（Network タブで block URL 等） | alert「通信に失敗しました〜」表示、キュー投入、復帰時に成功同期 | P2 |
 | OFF-013 | 既存記録のオフライン更新 | 既保存レコードをオフラインで再保存 | キュー `op=upsert` で投入、復帰時に `ON CONFLICT id` で正しく上書き | P1 |
 | OFF-014 | 複数件キューの順序同期 | オフラインで3児童分保存 → Network ON | 3件すべて同期、`pending_saves` が空になる | P2 |
+| OFF-020 | 読み取りキャッシュ（SWR）ヒット | オンライン1回目でホーム訪問 → オフライン化して再訪問 | 児童一覧 + 当日記録状況が瞬時表示、ネットワーク呼び出しなし。`patto-read-cache` の `entries` ストアに `children:active` / `daily_records:${today}` が格納 | P1 |
+| OFF-021 | TTL 超過時のキャッシュ可視化 | 記録入力画面を訪問 → 24h+1 経過後に再訪問（mock） | `phrase_bank:all` / `activity_items:all` はキャッシュ命中するが `source=stale`、ネットワーク更新で `source=network` に切替（UI には影響なし、内部状態のみ） | P2 |
+| OFF-022 | 児童追加時の invalidate | 児童新規登録して保存 | `/children` と `/` の children リストが即時更新（キャッシュ無効化され次回 fetch で差分反映） | P1 |
+| OFF-023 | 記録保存時の当日キャッシュ invalidate | `/record/[childId]` で「書き終えて次へ」 | ホーム画面の当日記録状況カードが即時更新（記録済み欄に追加される） | P1 |
+| OFF-024 | オフライン書込復帰同期 → キャッシュ無効化 | オフライン書込キューを持ったまま復帰 | `syncPending` 成功後に当日 `daily_records` キャッシュが消え、次回ホーム訪問で最新値が引かれる | P1 |
+| OFF-025 | アカウント切替時の cross-account leak 防止 | ユーザー A で児童リスト閲覧 → ログアウト → ユーザー B でログイン | B のホーム画面でキャッシュの A の児童が見えない（`ownerId` 不一致で cache miss 扱い） | P1 |
 
 ### 3.7 フレーズ管理 (`PHR`) -- テスト数: 5件
 
