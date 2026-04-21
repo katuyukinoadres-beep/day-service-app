@@ -27,6 +27,7 @@ export default function NewChildPage() {
     icon_color: ICON_COLORS[0],
     goals: [""],
     domain_tags: [] as string[],
+    h_navi_user_code: "",
   });
 
   const updateField = (field: string, value: string) => {
@@ -99,6 +100,7 @@ export default function NewChildPage() {
       icon_color: form.icon_color,
       goals: form.goals.filter((g) => g.trim()),
       domain_tags: form.domain_tags,
+      h_navi_user_code: form.h_navi_user_code.trim() || null,
     });
 
     if (insertError) {
@@ -137,6 +139,13 @@ export default function NewChildPage() {
           type="date"
           value={form.birth_date}
           onChange={(e) => updateField("birth_date", e.target.value)}
+        />
+
+        <Input
+          label="児童管理番号（h-navi 用）"
+          value={form.h_navi_user_code}
+          onChange={(e) => updateField("h_navi_user_code", e.target.value)}
+          placeholder="h-navi の userCode を入力"
         />
 
         <Input

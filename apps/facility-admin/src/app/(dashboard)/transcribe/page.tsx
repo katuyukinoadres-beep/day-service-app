@@ -8,6 +8,7 @@ type Row = {
   id: string;
   child_id: string;
   child_name: string;
+  h_navi_user_code: string | null;
   recorder_display_name: string;
   submitted_at: string | null;
   transcribed_at: string | null;
@@ -67,7 +68,7 @@ export default function TranscribePage() {
       const { data: records, error: recErr } = await supabase
         .from("daily_records")
         .select(
-          "id, child_id, date, activities, notes, ai_text, submitted_at, transcribed_at, paper_logged, recorded_by, children(name), profiles!daily_records_recorded_by_fkey(display_name)"
+          "id, child_id, date, activities, notes, ai_text, submitted_at, transcribed_at, paper_logged, recorded_by, children(name, h_navi_user_code), profiles!daily_records_recorded_by_fkey(display_name)"
         )
         .eq("facility_id", facilityId)
         .eq("date", date)
@@ -81,6 +82,7 @@ export default function TranscribePage() {
         return;
       }
 
+      type JoinedChild = { name: string; h_navi_user_code: string | null };
       type Joined = {
         id: string;
         child_id: string;
@@ -89,7 +91,7 @@ export default function TranscribePage() {
         ai_text: string | null;
         submitted_at: string | null;
         transcribed_at: string | null;
-        children: { name: string } | { name: string }[] | null;
+        children: JoinedChild | JoinedChild[] | null;
         profiles: { display_name: string } | { display_name: string }[] | null;
       };
 
@@ -110,6 +112,7 @@ export default function TranscribePage() {
           id: r.id,
           child_id: r.child_id,
           child_name: child?.name ?? "(不明)",
+          h_navi_user_code: child?.h_navi_user_code ?? null,
           recorder_display_name: recorderName,
           submitted_at: r.submitted_at,
           transcribed_at: r.transcribed_at,
@@ -281,6 +284,21 @@ export default function TranscribePage() {
                       {status.label}
                     </span>
                     <span className="text-[15px] font-semibold text-foreground">{row.child_name}</span>
+                    {row.h_navi_user_code ? (
+                      <span
+                        className="rounded-md bg-blue-50 px-2 py-0.5 font-mono text-[11px] font-medium text-blue-800"
+                        title="児童管理番号（h-navi userCode）"
+                      >
+                        #{row.h_navi_user_code}
+                      </span>
+                    ) : (
+                      <span
+                        className="rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800"
+                        title="児童管理番号が未入力 — 児童編集画面から設定してください"
+                      >
+                        管理番号 未設定
+                      </span>
+                    )}
                     <span className="text-[12px] text-sub">記録者: {row.recorder_display_name || "(未設定)"}</span>
                   </div>
                   <div className="flex items-center gap-3 text-[11px] text-sub">

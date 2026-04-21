@@ -31,6 +31,7 @@ export default function EditChildPage() {
     goals: [""],
     domain_tags: [] as string[],
     is_active: true,
+    h_navi_user_code: "",
   });
 
   useEffect(() => {
@@ -54,6 +55,7 @@ export default function EditChildPage() {
           goals: data.goals.length > 0 ? data.goals : [""],
           domain_tags: data.domain_tags,
           is_active: data.is_active,
+          h_navi_user_code: data.h_navi_user_code ?? "",
         });
       }
       setLoading(false);
@@ -110,6 +112,7 @@ export default function EditChildPage() {
         goals: form.goals.filter((g) => g.trim()),
         domain_tags: form.domain_tags,
         is_active: form.is_active,
+        h_navi_user_code: form.h_navi_user_code.trim() || null,
       })
       .eq("id", childId);
 
@@ -166,6 +169,13 @@ export default function EditChildPage() {
           type="date"
           value={form.birth_date}
           onChange={(e) => updateField("birth_date", e.target.value)}
+        />
+
+        <Input
+          label="児童管理番号（h-navi 用）"
+          value={form.h_navi_user_code}
+          onChange={(e) => updateField("h_navi_user_code", e.target.value)}
+          placeholder="h-navi の userCode を入力"
         />
 
         <Input
