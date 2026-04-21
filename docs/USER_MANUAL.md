@@ -8,6 +8,26 @@
 
 ---
 
+## 📞 問い合わせ先
+
+トラブル・質問・要望は、以下までいつでもご連絡ください。
+
+| 項目 | 内容 |
+|---|---|
+| **担当者** | 山本 克行 |
+| **メール** | katuyukino.adres@gmail.com |
+
+## 🔗 アプリ URL
+
+| アプリ | URL | 主な利用者 |
+|---|---|---|
+| **ぱっと記録（本体）** | [https://day-service-app.vercel.app/](https://day-service-app.vercel.app/) | 現場の職員さん |
+| **事業所長ダッシュボード** | [https://day-service-facility-admin.vercel.app/](https://day-service-facility-admin.vercel.app/) | 施設長・管理者 |
+
+どちらも**リンクをタップすれば直接開きます**。ホーム画面に追加する手順は [A-1-4](#a-1-4-スマホのホーム画面に追加おすすめ) 参照。
+
+---
+
 ## 目次
 
 - [Part A：職員編（現場で記録入力する方へ）](#part-a職員編)
@@ -963,7 +983,18 @@ h-navi 側で「登録」を押す
 - **対応アプリバージョン**: v1.1.0-dev.29 以降
 - **更新履歴**: 新機能追加・運用変更時に随時改訂
 
-> 不明点・誤りの指摘・要望があれば、開発担当者までご連絡ください。
+---
+
+## 📞 連絡先（再掲）
+
+| 項目 | 内容 |
+|---|---|
+| **担当者** | 山本 克行 |
+| **メール** | katuyukino.adres@gmail.com |
+| **ぱっと記録（本体）** | [https://day-service-app.vercel.app/](https://day-service-app.vercel.app/) |
+| **事業所長ダッシュボード** | [https://day-service-facility-admin.vercel.app/](https://day-service-facility-admin.vercel.app/) |
+
+不明点・誤りの指摘・要望は、上記メールまで気軽にご連絡ください。
 
 ---
 
