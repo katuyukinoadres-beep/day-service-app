@@ -259,7 +259,12 @@ Service Worker と `/offline` ページの動作確認。
 | OFF-006 | オフライン時の未訪問ページ | 未訪問のページに通信 OFF で遷移 | `/offline` フォールバックページが表示、再読み込みボタンあり | P1 |
 | OFF-007 | `/offline` 未認証アクセス | ログアウト後に `/offline` を直接開く | 認証にリダイレクトされず `/offline` がそのまま表示される | P2 |
 | OFF-008 | 新 SW バージョン反映 | デプロイ後に既存タブで操作 | 新 SW install → skipWaiting → 次リロードで最新バンドルに切替 | P2 |
-| OFF-009 | API 通信は intercept しない | オフライン時に記録保存ボタンをタップ | 保存 API は普通に失敗（Slice 2 で IndexedDB キュー化予定） | P2 |
+| OFF-009 | オフライン保存の IndexedDB 退避 | 通信 OFF で「書き終えて次へ」タップ | `patto-offline-queue` の `pending_saves` に1件追加、alert「通信復帰時に自動実行」表示、次児童へ遷移。バナーに待機件数表示 | P1 |
+| OFF-010 | オフライン下書き保存の退避 | 通信 OFF で「下書き保存」タップ | 同様にキュー投入、現画面に留まる | P1 |
+| OFF-011 | 通信復帰時の自動同期 | OFF-009/010 のキューを持った状態で Network ON | `online` イベント発火で `syncPending` 実行、`daily_records` + `daily_record_activities` に書込成功、キュー空、青バナーも消える | P1 |
+| OFF-012 | オンライン時 fetch 失敗のフォールバック | 疑似的に Supabase 側 500 を返す（Network タブで block URL 等） | alert「通信に失敗しました〜」表示、キュー投入、復帰時に成功同期 | P2 |
+| OFF-013 | 既存記録のオフライン更新 | 既保存レコードをオフラインで再保存 | キュー `op=upsert` で投入、復帰時に `ON CONFLICT id` で正しく上書き | P1 |
+| OFF-014 | 複数件キューの順序同期 | オフラインで3児童分保存 → Network ON | 3件すべて同期、`pending_saves` が空になる | P2 |
 
 ### 3.7 フレーズ管理 (`PHR`) -- テスト数: 5件
 

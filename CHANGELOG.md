@@ -17,6 +17,20 @@
 
 ## [Unreleased]
 
+### Added (オフライン書き込みキュー — Phase B7 Slice 2)
+- **IndexedDB 書き込みキュー** で、オフライン中に職員が「下書き保存」「書き終えて次へ」を押しても記録が端末に退避し、通信復帰時に自動同期される
+- 新規ファイル:
+  - `apps/main/src/lib/offlineQueue.ts`: `idb` ラッパー（DB `patto-offline-queue` / store `pending_saves`）。API: `enqueueSave` / `getPendingCount` / `listPending` / `syncPending`
+  - `apps/main/src/lib/useOfflineQueue.ts`: `navigator.onLine` + `online` イベント監視 hook、5秒ごとにカウント再取得、復帰時に自動 `syncPending`
+- **`apps/main/src/app/record/[childId]/page.tsx` `handleSave` 改修**:
+  - `daily_records.id` を `crypto.randomUUID()` で事前採番（activities 行との整合確保、復帰時の upsert が衝突しない）
+  - `navigator.onLine === false` なら即キュー投入 + 「オフライン中です。保存は通信復帰時に自動実行されます」alert → 次児童遷移
+  - オンライン検知されても fetch 失敗時は fallback でキュー投入（空港ラウンジ等の partial-online 対策）
+- **`apps/main/src/components/OfflineBanner.tsx` 改修**: `useOfflineQueue` を参照、オフライン時は待機件数を併記、オンライン + 同期中/残件ありは青色バナー
+- **dependency**: `idb ^8.0.3` を `apps/main` に追加（~2KB、Promise-based）
+- **スコープ外（Slice 3 以降）**: 失敗エントリの可視化 UI、競合解決（現状は last-write-wins）、exponential backoff、複数端末間の同期
+- **なぜ今**: Slice 1 で UI は整ったが、現場で「ネット断 → 保存しても消える」のリスクが残っていた。本番運用開始前の最後のオフライン実務ピース
+
 ### Added (児童管理番号 ⇔ h-navi userCode 3キー突合の第3キーを本番反映 — Phase B7.5 Slice 4)
 - **DB マイグレーション** `018_children_h_navi_user_code.sql`: `children` に `h_navi_user_code TEXT` 追加（nullable）
   - 複合ユニーク `(facility_id, h_navi_user_code)` を部分インデックスで付与（NULL 除外、未入力児童の混在を許容）
