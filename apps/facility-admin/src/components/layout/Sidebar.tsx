@@ -53,7 +53,6 @@ const navItems: NavItem[] = [
   {
     label: "児童分析",
     href: "/children",
-    disabled: true,
     icon: (
       <svg
         className="h-5 w-5"
