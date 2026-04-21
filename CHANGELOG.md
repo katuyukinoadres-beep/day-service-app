@@ -17,6 +17,20 @@
 
 ## [Unreleased]
 
+### Added (事業所長ダッシュボード 児童分析ページ — Task 3 Slice 2)
+- **[facility-admin /children](https://day-service-facility-admin.vercel.app/children) 新設**: 期間内の児童別活動・記録状況を可視化
+  - 日付範囲ピッカー（デフォルト直近 28 日）
+  - 児童セレクタ（すべて / 単一児童）
+  - 施設全体 KPI 3 件: アクティブ児童数・期間内記録件数・期間内活動選択延べ数
+  - **「すべて」ビュー**: 児童別テーブル（記録数・目標数・上位活動 Top 3）、行クリックで単一児童ビューへ
+  - **「単一児童」ビュー**:
+    - 個別目標リスト（`children.goals` をそのまま表示）
+    - 活動頻度 Top 5 横棒グラフ（Tailwind、依存 0）
+    - 週次記録数トレンド（過去 4 週、月曜起点の縦棒グラフ）
+- **`apps/facility-admin/src/components/layout/Sidebar.tsx` 改修**: 児童分析ナビの `disabled: true` 解除（準備中バッジ除去）
+- **チャートライブラリは不採用**: recharts 40KB 増を避け、インライン SVG + Tailwind で MVP 完結
+- **スコープ外（Slice 2.5 以降に繰越）**: 個別目標の進捗スコアリング（`ai_text` / `notes` テキスト解析）、出欠率可視化、複数児童比較ビュー
+
 ### Added (オフライン読み取りキャッシュ — Phase B7 Slice 3)
 - **IndexedDB による Stale-While-Revalidate 読み取りキャッシュ** を導入。オフライン時に児童一覧・当日の記録状況・活動項目・フレーズバンクが閲覧可能に
 - 新規ファイル:
