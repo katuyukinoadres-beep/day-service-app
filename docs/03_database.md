@@ -68,6 +68,7 @@ erDiagram
         text_arr goals
         text_arr domain_tags
         boolean is_active
+        text h_navi_user_code
         timestamptz created_at
         timestamptz updated_at
     }
@@ -183,6 +184,7 @@ Supabase Auth のユーザー（`auth.users`）と1:1で紐づくプロフィー
 | `goals` | `text[]` | NOT NULL, DEFAULT `'{}'` | 個別支援目標（配列） |
 | `domain_tags` | `text[]` | NOT NULL, DEFAULT `'{}'` | 支援領域タグ（配列）。値は `01_requirements.md` &sect;5.1 参照 |
 | `is_active` | `boolean` | NOT NULL, DEFAULT `TRUE` | 有効フラグ（論理削除用） |
+| `h_navi_user_code` | `text` | NULL | 児童管理番号 / h-navi 側 `userCode`（Phase B7.5 3キー突合の第3キー。migration 018） |
 | `created_at` | `timestamptz` | NOT NULL, DEFAULT `now()` | 作成日時 |
 | `updated_at` | `timestamptz` | NOT NULL, DEFAULT `now()` | 更新日時（トリガーで自動更新） |
 
@@ -193,6 +195,7 @@ Supabase Auth のユーザー（`auth.users`）と1:1で紐づくプロフィー
 | `idx_children_facility_id` | `facility_id` | B-tree | 施設別児童一覧の検索 |
 | `idx_children_is_active` | `facility_id, is_active` | B-tree（複合） | 有効な児童の絞り込み |
 | `idx_children_name_kana` | `facility_id, name_kana` | B-tree（複合） | 五十音順ソートの高速化 |
+| `children_facility_h_navi_user_code_unique` | `facility_id, h_navi_user_code` | UNIQUE partial（`WHERE h_navi_user_code IS NOT NULL`） | 事業所内での h-navi userCode 重複防止（未入力児童は対象外） |
 
 **トリガー:**
 

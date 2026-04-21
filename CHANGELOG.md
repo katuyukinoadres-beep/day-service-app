@@ -17,6 +17,15 @@
 
 ## [Unreleased]
 
+### Added (児童管理番号 ⇔ h-navi userCode 3キー突合の第3キーを本番反映 — Phase B7.5 Slice 4)
+- **DB マイグレーション** `018_children_h_navi_user_code.sql`: `children` に `h_navi_user_code TEXT` 追加（nullable）
+  - 複合ユニーク `(facility_id, h_navi_user_code)` を部分インデックスで付与（NULL 除外、未入力児童の混在を許容）
+  - 既存の氏名 + 生年月日 の 2 キー突合に、h-navi 側の `userCode` を「児童管理番号」として 3 キー目に追加
+- **児童編集・新規登録フォーム**（`apps/main/src/app/(main)/children/[childId]/page.tsx` / `new/page.tsx`）: 「児童管理番号（h-navi 用）」Input を生年月日直下に配置、save/insert payload に含める
+- **代表者ダッシュボード 転記画面**（`apps/facility-admin/src/app/(dashboard)/transcribe/page.tsx`）: 各行の児童名横に `#<userCode>` バッジ表示（未入力時は「管理番号 未設定」の警告バッジ）で目視突合を支援。`daily_records` → `children(name, h_navi_user_code)` join に h_navi_user_code を追加取得
+- 代表者合意が 2026-04-21 に取れたため、本番運用前の最終ピースとして投入
+- **スコープ外（Phase 2 Slice 2 で後回し）**: Chrome 拡張での h-navi 自動入力、サーバーサイド自動マッチング
+
 ### Changed (デフォルトフレーズを h-navi 実運用データ分析で再編 — Phase B9 Slice 1)
 - **DB マイグレーション** `017_refresh_default_phrases.sql` 追加
   - h-navi 連絡帳 61 件（2026-03-23〜04-20 の 7 日分サンプル）を分析し、放デイの学習支援中心の運用に合わせてデフォルトフレーズを再編

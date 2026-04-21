@@ -74,6 +74,7 @@ export type Database = {
           goals: string[];
           domain_tags: string[];
           is_active: boolean;
+          h_navi_user_code: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -89,6 +90,7 @@ export type Database = {
           goals?: string[];
           domain_tags?: string[];
           is_active?: boolean;
+          h_navi_user_code?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -104,6 +106,7 @@ export type Database = {
           goals?: string[];
           domain_tags?: string[];
           is_active?: boolean;
+          h_navi_user_code?: string | null;
           created_at?: string;
           updated_at?: string;
         };
