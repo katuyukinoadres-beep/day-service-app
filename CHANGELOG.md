@@ -17,6 +17,24 @@
 
 ## [Unreleased]
 
+### Added (オフライン読み取りキャッシュ — Phase B7 Slice 3)
+- **IndexedDB による Stale-While-Revalidate 読み取りキャッシュ** を導入。オフライン時に児童一覧・当日の記録状況・活動項目・フレーズバンクが閲覧可能に
+- 新規ファイル:
+  - `apps/main/src/lib/readCache.ts`: `idb` ラッパー（DB `patto-read-cache` / store `entries`）。API: `readCache` / `writeCache` / `invalidate` / `invalidateByPrefix` / `clearReadCache` / `TTL` 定数
+  - `apps/main/src/lib/useCachedQuery.ts`: SWR 風 hook。マウント時にキャッシュを即返し、並行でネットワーク更新。`online` イベントで自動 refetch。offline 時は cache のみ返して fetch スキップ
+  - `apps/main/src/lib/useCurrentUserId.ts`: Supabase session から userId を同期的に取得。キャッシュ所有者キーに使用し、アカウント切替時の cross-account leak を防止
+- **対象 4 クエリ**:
+  - `children:active` (TTL 1日) — ホーム + 児童一覧画面の両方で同一キー共有
+  - `daily_records:${today}` (TTL 5分) — ホームの当日記録状況
+  - `phrase_bank:all` (TTL 1週間) — 記録入力画面
+  - `activity_items:all` (TTL 1週間) — 記録入力画面
+- **Invalidation フック**:
+  - 児童編集/新規/非表示 → `children:active` を invalidate
+  - `handleSave` / `handleMarkPaperLogged` → `daily_records:${today}` を invalidate
+  - `offlineQueue.syncPending` 成功時 → `daily_records:${record.date}` を invalidate
+- **オンラインフォールバック**: fetcher 失敗時もキャッシュデータは保持、UI を壊さない
+- **Slice 4 以降の余地**: 履歴画面（日付フィルタ）キャッシュ、Quick templates、失敗エントリ可視化
+
 ### Added (オフライン書き込みキュー — Phase B7 Slice 2)
 - **IndexedDB 書き込みキュー** で、オフライン中に職員が「下書き保存」「書き終えて次へ」を押しても記録が端末に退避し、通信復帰時に自動同期される
 - 新規ファイル:

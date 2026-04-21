@@ -1,5 +1,6 @@
 import { openDB, type IDBPDatabase, type DBSchema } from "idb";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { invalidate } from "./readCache";
 
 const DB_NAME = "patto-offline-queue";
 const DB_VERSION = 1;
@@ -136,6 +137,8 @@ export async function syncPending(supabase: SupabaseClient): Promise<SyncResult>
         if (insErr) throw insErr;
       }
       await database.delete(STORE, entry.queueId);
+      // Slice 3: この記録の日付の daily_records キャッシュを無効化（ホームで即反映）
+      await invalidate(`daily_records:${entry.record.date}`);
       synced += 1;
     } catch (err) {
       failed += 1;
