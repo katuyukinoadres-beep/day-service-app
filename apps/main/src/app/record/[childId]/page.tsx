@@ -8,6 +8,7 @@ import { Chip } from "@/components/ui/Chip";
 import { Textarea } from "@/components/ui/Input";
 import { VoiceInputButton } from "@/components/VoiceInputButton";
 import { CopyButton } from "@/components/CopyButton";
+import { enqueueSave } from "@/lib/offlineQueue";
 import type {
   Child,
   Phrase,
@@ -306,7 +307,12 @@ export default function RecordPage() {
         ? new Date().toISOString()
         : existingRecord?.submitted_at ?? null;
 
+    // Phase B7 Slice 2: record.id を事前採番して activities 行と整合させる。オンライン/オフライン
+    // どちらの経路でも同じ id を使うので、オフライン enqueue 時の upsert が復帰時に insert と衝突しない。
+    const recordId = existingRecord?.id ?? crypto.randomUUID();
+
     const recordData = {
+      id: recordId,
       facility_id: profile.facility_id,
       child_id: childId,
       date: today,
@@ -328,58 +334,89 @@ export default function RecordPage() {
       paper_logged: false,
     };
 
-    let savedRecordId: string | null = null;
-    if (existingRecord) {
-      const { data: updated } = await supabase
-        .from("daily_records")
-        .update(recordData)
-        .eq("id", existingRecord.id)
-        .select("id")
-        .single();
-      savedRecordId = (updated as { id: string } | null)?.id ?? existingRecord.id;
-    } else {
-      const { data: inserted } = await supabase
-        .from("daily_records")
-        .insert(recordData)
-        .select("id")
-        .single();
-      savedRecordId = (inserted as { id: string } | null)?.id ?? null;
+    const activityRows = Object.entries(itemSelections).map(([activityItemId, detail]) => ({
+      daily_record_id: recordId,
+      activity_item_id: activityItemId,
+      detail: detail.trim() || null,
+    }));
+
+    const proceed = () => {
+      // mode=submit: 次の未記録児童へ自動遷移（既存挙動）
+      // mode=draft: 現画面に留まり、存在バッジの表示だけ更新する
+      if (mode === "submit") {
+        const recordedIds = new Set(allRecords.map((r) => r.child_id));
+        recordedIds.add(childId); // 今保存したものを追加
+        const nextChild = allChildren.find((c) => !recordedIds.has(c.id));
+
+        if (nextChild) {
+          router.replace(`/record/${nextChild.id}`);
+        } else {
+          router.push("/");
+        }
+        router.refresh();
+      } else {
+        setSaving(false);
+        router.refresh();
+      }
+    };
+
+    // Phase B7 Slice 2: オフライン検知時は即キュー投入。online 復帰時に useOfflineQueue 経由で自動同期。
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      await enqueueSave({
+        op: existingRecord ? "upsert" : "insert",
+        record: recordData,
+        activities: activityRows,
+      });
+      window.alert(
+        mode === "submit"
+          ? "オフライン中です。保存は通信復帰時に自動実行されます。"
+          : "オフライン中です。下書きは通信復帰時に自動保存されます。"
+      );
+      proceed();
+      return;
     }
 
-    // 活動項目連結テーブルを delete → insert で同期
-    if (savedRecordId) {
-      await supabase
+    try {
+      if (existingRecord) {
+        const { error } = await supabase
+          .from("daily_records")
+          .update(recordData)
+          .eq("id", existingRecord.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("daily_records")
+          .insert(recordData);
+        if (error) throw error;
+      }
+
+      // 活動項目連結テーブルを delete → insert で同期
+      const { error: delErr } = await supabase
         .from("daily_record_activities")
         .delete()
-        .eq("daily_record_id", savedRecordId);
-
-      const rows = Object.entries(itemSelections).map(([activityItemId, detail]) => ({
-        daily_record_id: savedRecordId as string,
-        activity_item_id: activityItemId,
-        detail: detail.trim() || null,
-      }));
-      if (rows.length > 0) {
-        await supabase.from("daily_record_activities").insert(rows);
+        .eq("daily_record_id", recordId);
+      if (delErr) throw delErr;
+      if (activityRows.length > 0) {
+        const { error: insErr } = await supabase
+          .from("daily_record_activities")
+          .insert(activityRows);
+        if (insErr) throw insErr;
       }
-    }
 
-    // mode=submit: 次の未記録児童へ自動遷移（既存挙動）
-    // mode=draft: 現画面に留まり、存在バッジの表示だけ更新する
-    if (mode === "submit") {
-      const recordedIds = new Set(allRecords.map((r) => r.child_id));
-      recordedIds.add(childId); // 今保存したものを追加
-      const nextChild = allChildren.find((c) => !recordedIds.has(c.id));
-
-      if (nextChild) {
-        router.replace(`/record/${nextChild.id}`);
-      } else {
-        router.push("/");
-      }
-      router.refresh();
-    } else {
-      // 下書き保存: 画面遷移せずに一時メッセージだけ更新
-      setSaving(false);
-      router.refresh();
+      proceed();
+    } catch (err) {
+      // ネットワーク断などでオンライン検知はされていても実 fetch が失敗したケース。
+      // ユーザー作業を守るためキューに積んで続行。Slice 3 で失敗エントリの可視化を予定。
+      console.error("[record save] falling back to offline queue:", err);
+      await enqueueSave({
+        op: existingRecord ? "upsert" : "insert",
+        record: recordData,
+        activities: activityRows,
+      });
+      window.alert(
+        "通信に失敗しました。内容は端末に保存し、通信復帰時に自動で送信します。"
+      );
+      proceed();
     }
   };
 
