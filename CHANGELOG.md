@@ -17,6 +17,20 @@
 
 ## [Unreleased]
 
+### Added (事業所長ダッシュボード 請求準備ページ — Task 3 Slice 4)
+- **[facility-admin /billing](https://day-service-facility-admin.vercel.app/billing) 新設**: 月次サービス提供実績の集計とエビデンス整合性チェック
+  - 月選択（デフォルト前月）
+  - KPI 3 件: 提供延べ日数 / 提供児童数 / エビデンス警告件数
+  - 児童別月次テーブル（出席日数・記録完了数・警告件数、行クリックで警告フィルタ）
+  - エビデンス警告パネル: 5 ルール検出 + 児童・ルール別フィルタ
+    - **高**: 出席あり・記録なし / 記録空欄
+    - **中**: 記録あり・出席なし / 来所/退所時刻欠落
+    - **低**: 送迎手段欠落（`arrival_time` あるのに `pickup_method=NULL`）
+  - CSV エクスポート 2 種: 出席日数（請求 SaaS 入力用）/ 警告詳細（運営指導エビデンス用）。BOM 付き UTF-8、Excel 直開き対応
+- **`apps/facility-admin/src/components/layout/Sidebar.tsx` 改修**: 請求準備ナビの `disabled: true` 解除（準備中バッジ除去）
+- **集計ロジックは pure function に分離**: `_lib/aggregateMonth.ts` `_lib/evidenceChecks.ts` `_lib/exportCsv.ts` — テスト追加時にユニット検証可能な構成
+- **スコープ外**: 国保連請求フォーマット直接出力（SaaS 経由運用前提）、加算項目（児発加算・送迎加算等）の自動判定（次スライス検討）
+
 ### Added (事業所長ダッシュボード 児童分析ページ — Task 3 Slice 2)
 - **[facility-admin /children](https://day-service-facility-admin.vercel.app/children) 新設**: 期間内の児童別活動・記録状況を可視化
   - 日付範囲ピッカー（デフォルト直近 28 日）
