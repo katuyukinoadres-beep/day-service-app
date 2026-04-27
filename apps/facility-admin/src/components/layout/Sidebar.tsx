@@ -92,7 +92,6 @@ const navItems: NavItem[] = [
   {
     label: "請求準備",
     href: "/billing",
-    disabled: true,
     icon: (
       <svg
         className="h-5 w-5"
